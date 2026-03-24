@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Oracle Forms XML Export
+  Form Module: HRMS_MENU (Main Navigation Form)
+  Exported from Oracle Forms Builder 12c (12.2.1.4)
+  Original binary: HRMS_MENU.fmb
+
+  Purpose: MDI parent form - main menu bar and navigation to all HRMS modules.
+  Serves as the application shell after successful login.
+  Menu items launch child forms via OPEN_FORM with ACTIVATE/SESSION.
+-->
+<FormModule Name="HRMS_MENU" ConsoleWindow="CONSOLE"
+            FirstNavigationBlock="MENU_CONTROL"
+            Title="HRMS - Main Menu">
+
+  <AttachedLibrary Name="HRMS_COMMON_LIB" LibraryLocation="HRMS_COMMON_LIB" LibrarySource="File"/>
+
+  <Trigger Name="WHEN-NEW-FORM-INSTANCE" TriggerStyle="PL/SQL" FireInEnterQueryMode="No">
+    <TriggerText>
+BEGIN
+    SET_WINDOW_PROPERTY(FORMS_MDI_WINDOW, TITLE,
+        'Human Resource Management System (HRMS) v4.2 - ' ||
+        :GLOBAL.current_user || ' - Session: ' || :GLOBAL.session_id);
+
+    -- Set menu item visibility based on permissions
+    IF NOT PKG_SECURITY.has_permission(:GLOBAL.current_emp_id, 'PAYROLL', 'VIEW') THEN
+        SET_MENU_ITEM_PROPERTY('MENU_MAIN.MI_PAYROLL', ENABLED, PROPERTY_FALSE);
+    END IF;
+
+    IF NOT PKG_SECURITY.has_permission(:GLOBAL.current_emp_id, 'ADMIN', 'VIEW') THEN
+        SET_MENU_ITEM_PROPERTY('MENU_MAIN.MI_ADMIN', ENABLED, PROPERTY_FALSE);
+    END IF;
+
+    IF NOT PKG_SECURITY.has_permission(:GLOBAL.current_emp_id, 'REPORTS', 'VIEW') THEN
+        SET_MENU_ITEM_PROPERTY('MENU_MAIN.MI_REPORTS', ENABLED, PROPERTY_FALSE);
+    END IF;
+
+    GO_BLOCK('MENU_CONTROL');
+END;
+    </TriggerText>
+  </Trigger>
+
+  <Block Name="MENU_CONTROL" QueryDataSourceType="None"
+         RecordsDisplayed="1" NavigationStyle="Same Record"
+         InsertAllowed="No" UpdateAllowed="No" DeleteAllowed="No">
+
+    <Item Name="WELCOME_TEXT" ItemType="Display Item" DataType="Char"
+          DefaultValue="Welcome to the Human Resource Management System"
+          CanvasName="CVS_MAIN" XPosition="50" YPosition="30"
+          Width="600" Height="30" FontSize="14" FontWeight="Bold"/>
+
+    <Item Name="USER_INFO" ItemType="Display Item" DataType="Char"
+          CanvasName="CVS_MAIN" XPosition="50" YPosition="70"
+          Width="400" Height="20"/>
+
+    <!-- Module Launch Buttons -->
+    <Item Name="BTN_EMPLOYEES" ItemType="Push Button"
+          Label="Employee Management" Width="200" Height="60"
+          CanvasName="CVS_MAIN" XPosition="50" YPosition="120">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    OPEN_FORM('HRMS_EMPLOYEE', ACTIVATE, SESSION);
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Item Name="BTN_PAYROLL" ItemType="Push Button"
+          Label="Payroll Processing" Width="200" Height="60"
+          CanvasName="CVS_MAIN" XPosition="270" YPosition="120">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    IF NOT PKG_SECURITY.has_permission(:GLOBAL.current_emp_id, 'PAYROLL', 'VIEW') THEN
+        MESSAGE('Access denied.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+    OPEN_FORM('HRMS_PAYROLL', ACTIVATE, SESSION);
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Item Name="BTN_LEAVE" ItemType="Push Button"
+          Label="Leave Management" Width="200" Height="60"
+          CanvasName="CVS_MAIN" XPosition="490" YPosition="120">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    OPEN_FORM('HRMS_LEAVE', ACTIVATE, SESSION);
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Item Name="BTN_PERFORMANCE" ItemType="Push Button"
+          Label="Performance Reviews" Width="200" Height="60"
+          CanvasName="CVS_MAIN" XPosition="50" YPosition="200">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    OPEN_FORM('HRMS_PERFORMANCE', ACTIVATE, SESSION);
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Item Name="BTN_REPORTS" ItemType="Push Button"
+          Label="Reports &amp; Analytics" Width="200" Height="60"
+          CanvasName="CVS_MAIN" XPosition="270" YPosition="200">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    IF NOT PKG_SECURITY.has_permission(:GLOBAL.current_emp_id, 'REPORTS', 'VIEW') THEN
+        MESSAGE('Access denied.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+    OPEN_FORM('HRMS_REPORTS', ACTIVATE, SESSION);
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Item Name="BTN_LOGOUT" ItemType="Push Button"
+          Label="Logout" Width="200" Height="60"
+          CanvasName="CVS_MAIN" XPosition="490" YPosition="200">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    PKG_SECURITY.logout(TO_NUMBER(:GLOBAL.session_id));
+    EXIT_FORM;
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+  </Block>
+
+  <Canvas Name="CVS_MAIN" CanvasType="Content" Width="740" Height="400"/>
+
+  <Window Name="WIN_MAIN" Title="HRMS Main Menu"
+          WindowStyle="Document" Width="760" Height="420"
+          PrimaryCanvas="CVS_MAIN"/>
+
+  <!-- Menu Module Definition -->
+  <MenuModule Name="MENU_MAIN">
+    <Menu Name="FILE_MENU" Label="File">
+      <MenuItem Name="MI_LOGOUT" Label="Logout" CommandType="PL/SQL"
+                CommandText="PKG_SECURITY.logout(TO_NUMBER(:GLOBAL.session_id)); EXIT_FORM;"/>
+    </Menu>
+    <Menu Name="MODULES_MENU" Label="Modules">
+      <MenuItem Name="MI_EMPLOYEES" Label="Employee Management" CommandType="PL/SQL"
+                CommandText="OPEN_FORM('HRMS_EMPLOYEE', ACTIVATE, SESSION);"/>
+      <MenuItem Name="MI_PAYROLL" Label="Payroll Processing" CommandType="PL/SQL"
+                CommandText="OPEN_FORM('HRMS_PAYROLL', ACTIVATE, SESSION);"/>
+      <MenuItem Name="MI_LEAVE" Label="Leave Management" CommandType="PL/SQL"
+                CommandText="OPEN_FORM('HRMS_LEAVE', ACTIVATE, SESSION);"/>
+      <MenuItem Name="MI_PERFORMANCE" Label="Performance Reviews" CommandType="PL/SQL"
+                CommandText="OPEN_FORM('HRMS_PERFORMANCE', ACTIVATE, SESSION);"/>
+      <MenuItem Name="MI_REPORTS" Label="Reports" CommandType="PL/SQL"
+                CommandText="OPEN_FORM('HRMS_REPORTS', ACTIVATE, SESSION);"/>
+    </Menu>
+    <Menu Name="ADMIN_MENU" Label="Admin">
+      <MenuItem Name="MI_ADMIN" Label="System Administration" CommandType="PL/SQL"
+                CommandText="OPEN_FORM('HRMS_ADMIN', ACTIVATE, SESSION);"/>
+      <MenuItem Name="MI_CHANGE_PWD" Label="Change Password" CommandType="PL/SQL"
+                CommandText="SHOW_WINDOW('WIN_CHANGE_PWD');"/>
+    </Menu>
+    <Menu Name="HELP_MENU" Label="Help">
+      <MenuItem Name="MI_ABOUT" Label="About HRMS" CommandType="PL/SQL"
+                CommandText="MESSAGE('HRMS v4.2 - Build 2024.03.15');"/>
+    </Menu>
+  </MenuModule>
+
+</FormModule>

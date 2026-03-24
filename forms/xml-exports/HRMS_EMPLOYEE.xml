@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Oracle Forms XML Export
+  Form Module: HRMS_EMPLOYEE
+  Exported from Oracle Forms Builder 12c (12.2.1.4)
+  Original binary: HRMS_EMPLOYEE.fmb
+
+  Purpose: Employee maintenance form - master-detail with personal info,
+           job assignment, compensation history, and dependent management.
+  Canvas: 4 tab pages (Personal, Job & Compensation, Dependents, History)
+  Data Blocks: 5 (EMPLOYEE, SALARY, DEPENDENTS, EMERGENCY_CONTACTS, EMP_HISTORY)
+  LOVs: 8 (Department, Job Title, Manager, Location, Status, Gender, Marital, Country)
+-->
+<FormModule Name="HRMS_EMPLOYEE" ConsoleWindow="CONSOLE"
+            FirstNavigationBlock="EMPLOYEE"
+            MenuModule="HRMS_MENU" MenuSource="File"
+            Title="HRMS - Employee Maintenance">
+
+  <!-- ================================================================== -->
+  <!-- ATTACHED LIBRARIES                                                  -->
+  <!-- ================================================================== -->
+  <AttachedLibrary Name="HRMS_COMMON_LIB" LibraryLocation="HRMS_COMMON_LIB" LibrarySource="File"/>
+  <AttachedLibrary Name="HRMS_VALIDATION_LIB" LibraryLocation="HRMS_VALIDATION_LIB" LibrarySource="File"/>
+
+  <!-- ================================================================== -->
+  <!-- FORM-LEVEL TRIGGERS                                                 -->
+  <!-- ================================================================== -->
+  <Trigger Name="WHEN-NEW-FORM-INSTANCE" TriggerStyle="PL/SQL" FireInEnterQueryMode="No">
+    <TriggerText>
+DECLARE
+    v_session_id NUMBER;
+BEGIN
+    -- Validate session
+    v_session_id := TO_NUMBER(GET_APPLICATION_PROPERTY(USERNAME));
+    IF NOT PKG_SECURITY.is_session_valid(v_session_id) THEN
+        MESSAGE('Session expired. Please log in again.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    -- Set window title
+    SET_WINDOW_PROPERTY(FORMS_MDI_WINDOW, TITLE,
+        'HRMS - Employee Maintenance [' || :GLOBAL.current_user || ']');
+
+    -- Restrict based on permissions
+    IF NOT PKG_SECURITY.has_permission(:GLOBAL.current_emp_id, 'EMPLOYEE', 'EDIT') THEN
+        SET_BLOCK_PROPERTY('EMPLOYEE', INSERT_ALLOWED, PROPERTY_FALSE);
+        SET_BLOCK_PROPERTY('EMPLOYEE', UPDATE_ALLOWED, PROPERTY_FALSE);
+        SET_BLOCK_PROPERTY('EMPLOYEE', DELETE_ALLOWED, PROPERTY_FALSE);
+    END IF;
+
+    -- Default query to active employees
+    SET_BLOCK_PROPERTY('EMPLOYEE', DEFAULT_WHERE,
+        'EMPLOYMENT_STATUS = ''ACTIVE'' AND ACTIVE_FLAG = ''Y''');
+
+    -- Initialize LOVs
+    POPULATE_GROUP('RG_DEPARTMENTS');
+    POPULATE_GROUP('RG_JOB_TITLES');
+    POPULATE_GROUP('RG_LOCATIONS');
+
+    GO_BLOCK('EMPLOYEE');
+    EXECUTE_QUERY;
+END;
+    </TriggerText>
+  </Trigger>
+
+  <Trigger Name="ON-ERROR" TriggerStyle="PL/SQL" FireInEnterQueryMode="Yes">
+    <TriggerText>
+DECLARE
+    v_errcode NUMBER := ERROR_CODE;
+    v_errtype VARCHAR2(3) := ERROR_TYPE;
+    v_errmsg  VARCHAR2(200) := ERROR_TEXT;
+BEGIN
+    IF v_errcode = 40202 THEN
+        -- "Field is protected against update"
+        NULL; -- Suppress
+    ELSIF v_errcode = 40401 THEN
+        -- "No changes to save"
+        MESSAGE('No changes to save.');
+    ELSIF v_errcode = 40501 THEN
+        -- "Oracle error: unable to reserve record"
+        MESSAGE('Record is locked by another user. Please try again.');
+    ELSE
+        MESSAGE(v_errtype || '-' || TO_CHAR(v_errcode) || ': ' || v_errmsg);
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+END;
+    </TriggerText>
+  </Trigger>
+
+  <Trigger Name="KEY-EXIT" TriggerStyle="PL/SQL" FireInEnterQueryMode="Yes">
+    <TriggerText>
+BEGIN
+    IF :SYSTEM.FORM_STATUS = 'CHANGED' THEN
+        IF SHOW_ALERT('ALT_CONFIRM_EXIT') = ALERT_BUTTON1 THEN
+            COMMIT_FORM;
+        ELSIF SHOW_ALERT('ALT_CONFIRM_EXIT') = ALERT_BUTTON2 THEN
+            CLEAR_FORM(NO_VALIDATE);
+        ELSE
+            RAISE FORM_TRIGGER_FAILURE;
+        END IF;
+    END IF;
+    EXIT_FORM;
+END;
+    </TriggerText>
+  </Trigger>
+
+  <!-- ================================================================== -->
+  <!-- DATA BLOCKS                                                         -->
+  <!-- ================================================================== -->
+  <Block Name="EMPLOYEE" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.EMPLOYEES"
+         DMLDataTargetType="Table" DMLDataTargetName="HRMS.EMPLOYEES"
+         QueryAllRecords="No" RecordsDisplayed="1"
+         NavigationStyle="Same Record"
+         KeyMode="Unique" EnforcePrimaryKey="Yes"
+         InsertAllowed="Yes" UpdateAllowed="Yes" DeleteAllowed="Yes"
+         QueryAllowed="Yes">
+
+    <!-- Primary Key (hidden) -->
+    <Item Name="EMP_ID" ItemType="Text Field" DataType="Number"
+          MaximumLength="10" Required="Yes"
+          Visible="No" CanvasName="" TabPageName=""
+          DatabaseItem="Yes" PrimaryKey="Yes"
+          QueryAllowed="Yes" InsertAllowed="No" UpdateAllowed="No"/>
+
+    <!-- Employee Number (display only after insert) -->
+    <Item Name="EMP_NUMBER" ItemType="Text Field" DataType="Char"
+          MaximumLength="20" Required="Yes"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="20" Width="150" Height="20"
+          Prompt="Employee #:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" InsertAllowed="No" UpdateAllowed="No"
+          QueryAllowed="Yes"/>
+
+    <!-- Personal Information Fields -->
+    <Item Name="FIRST_NAME" ItemType="Text Field" DataType="Char"
+          MaximumLength="50" Required="Yes"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="45" Width="200" Height="20"
+          Prompt="First Name:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" CaseRestriction="Upper"/>
+
+    <Item Name="LAST_NAME" ItemType="Text Field" DataType="Char"
+          MaximumLength="50" Required="Yes"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="70" Width="200" Height="20"
+          Prompt="Last Name:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" CaseRestriction="Upper"/>
+
+    <Item Name="DATE_OF_BIRTH" ItemType="Text Field" DataType="Date"
+          MaximumLength="11" FormatMask="MM/DD/YYYY"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="95" Width="100" Height="20"
+          Prompt="Date of Birth:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <Item Name="GENDER" ItemType="List Item" DataType="Char"
+          MaximumLength="1" ListStyle="Poplist"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="120" Width="120" Height="20"
+          Prompt="Gender:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes">
+      <ListItemElement Label="Male" Value="M"/>
+      <ListItemElement Label="Female" Value="F"/>
+      <ListItemElement Label="Other" Value="O"/>
+    </Item>
+
+    <Item Name="MARITAL_STATUS" ItemType="List Item" DataType="Char"
+          MaximumLength="10" ListStyle="Poplist"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="145" Width="120" Height="20"
+          Prompt="Marital Status:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes">
+      <ListItemElement Label="Single" Value="SINGLE"/>
+      <ListItemElement Label="Married" Value="MARRIED"/>
+      <ListItemElement Label="Divorced" Value="DIVORCED"/>
+      <ListItemElement Label="Widowed" Value="WIDOWED"/>
+    </Item>
+
+    <Item Name="EMAIL" ItemType="Text Field" DataType="Char"
+          MaximumLength="100"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="170" Width="250" Height="20"
+          Prompt="Email:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" CaseRestriction="Lower"/>
+
+    <Item Name="PHONE_WORK" ItemType="Text Field" DataType="Char"
+          MaximumLength="30"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="195" Width="150" Height="20"
+          Prompt="Work Phone:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <Item Name="PHONE_MOBILE" ItemType="Text Field" DataType="Char"
+          MaximumLength="30"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="220" Width="150" Height="20"
+          Prompt="Mobile:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <!-- Address Fields -->
+    <Item Name="ADDRESS_LINE1" ItemType="Text Field" DataType="Char"
+          MaximumLength="200"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="255" Width="300" Height="20"
+          Prompt="Address 1:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <Item Name="ADDRESS_LINE2" ItemType="Text Field" DataType="Char"
+          MaximumLength="200"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="280" Width="300" Height="20"
+          Prompt="Address 2:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <Item Name="CITY" ItemType="Text Field" DataType="Char"
+          MaximumLength="100"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="305" Width="200" Height="20"
+          Prompt="City:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <Item Name="STATE_PROVINCE" ItemType="Text Field" DataType="Char"
+          MaximumLength="100"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="120" YPosition="330" Width="100" Height="20"
+          Prompt="State:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <Item Name="POSTAL_CODE" ItemType="Text Field" DataType="Char"
+          MaximumLength="20"
+          Visible="Yes" CanvasName="CVS_PERSONAL" TabPageName="TP_PERSONAL"
+          XPosition="300" YPosition="330" Width="80" Height="20"
+          Prompt="Zip:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <!-- Job & Assignment Fields (Tab Page 2) -->
+    <Item Name="HIRE_DATE" ItemType="Text Field" DataType="Date"
+          MaximumLength="11" FormatMask="MM/DD/YYYY" Required="Yes"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="120" YPosition="20" Width="100" Height="20"
+          Prompt="Hire Date:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes"/>
+
+    <Item Name="DEPT_ID" ItemType="Text Field" DataType="Number"
+          MaximumLength="10" Required="Yes"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="120" YPosition="45" Width="80" Height="20"
+          Prompt="Dept ID:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" LOV="LOV_DEPARTMENTS"/>
+
+    <Item Name="DEPT_NAME_DISP" ItemType="Display Item" DataType="Char"
+          MaximumLength="100"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="210" YPosition="45" Width="200" Height="20"
+          DatabaseItem="No"/>
+
+    <Item Name="JOB_ID" ItemType="Text Field" DataType="Number"
+          MaximumLength="10" Required="Yes"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="120" YPosition="70" Width="80" Height="20"
+          Prompt="Job Title:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" LOV="LOV_JOB_TITLES"/>
+
+    <Item Name="JOB_TITLE_DISP" ItemType="Display Item" DataType="Char"
+          MaximumLength="100"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="210" YPosition="70" Width="200" Height="20"
+          DatabaseItem="No"/>
+
+    <Item Name="MANAGER_EMP_ID" ItemType="Text Field" DataType="Number"
+          MaximumLength="10"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="120" YPosition="95" Width="80" Height="20"
+          Prompt="Manager:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" LOV="LOV_MANAGERS"/>
+
+    <Item Name="MANAGER_NAME_DISP" ItemType="Display Item" DataType="Char"
+          MaximumLength="101"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="210" YPosition="95" Width="200" Height="20"
+          DatabaseItem="No"/>
+
+    <Item Name="LOCATION_CODE" ItemType="Text Field" DataType="Char"
+          MaximumLength="10"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="120" YPosition="120" Width="80" Height="20"
+          Prompt="Location:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" LOV="LOV_LOCATIONS"/>
+
+    <Item Name="EMPLOYMENT_TYPE" ItemType="List Item" DataType="Char"
+          MaximumLength="20" ListStyle="Poplist"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="120" YPosition="145" Width="120" Height="20"
+          Prompt="Emp Type:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes">
+      <ListItemElement Label="Full-Time" Value="FULL_TIME"/>
+      <ListItemElement Label="Part-Time" Value="PART_TIME"/>
+      <ListItemElement Label="Contract" Value="CONTRACT"/>
+      <ListItemElement Label="Intern" Value="INTERN"/>
+    </Item>
+
+    <Item Name="EMPLOYMENT_STATUS" ItemType="List Item" DataType="Char"
+          MaximumLength="20" ListStyle="Poplist"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="120" YPosition="170" Width="120" Height="20"
+          Prompt="Status:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" UpdateAllowed="No">
+      <ListItemElement Label="Active" Value="ACTIVE"/>
+      <ListItemElement Label="On Leave" Value="ON_LEAVE"/>
+      <ListItemElement Label="Suspended" Value="SUSPENDED"/>
+      <ListItemElement Label="Terminated" Value="TERMINATED"/>
+    </Item>
+
+    <Item Name="TERMINATION_DATE" ItemType="Text Field" DataType="Date"
+          MaximumLength="11" FormatMask="MM/DD/YYYY"
+          Visible="Yes" CanvasName="CVS_JOB" TabPageName="TP_JOB"
+          XPosition="120" YPosition="195" Width="100" Height="20"
+          Prompt="Term Date:" PromptAttachmentEdge="Start"
+          DatabaseItem="Yes" UpdateAllowed="No"/>
+
+    <!-- Block-level triggers -->
+    <Trigger Name="PRE-INSERT" TriggerStyle="PL/SQL">
+      <TriggerText>
+BEGIN
+    :EMPLOYEE.EMP_ID := SEQ_EMPLOYEE.NEXTVAL;
+    :EMPLOYEE.EMP_NUMBER := PKG_EMPLOYEE.generate_emp_number;
+    :EMPLOYEE.ACTIVE_FLAG := 'Y';
+    :EMPLOYEE.EMPLOYMENT_STATUS := 'ACTIVE';
+    :EMPLOYEE.CREATED_BY := :GLOBAL.current_user;
+    :EMPLOYEE.CREATED_DATE := SYSDATE;
+END;
+      </TriggerText>
+    </Trigger>
+
+    <Trigger Name="PRE-UPDATE" TriggerStyle="PL/SQL">
+      <TriggerText>
+BEGIN
+    :EMPLOYEE.MODIFIED_BY := :GLOBAL.current_user;
+    :EMPLOYEE.MODIFIED_DATE := SYSDATE;
+END;
+      </TriggerText>
+    </Trigger>
+
+    <Trigger Name="POST-QUERY" TriggerStyle="PL/SQL">
+      <TriggerText>
+BEGIN
+    -- Populate display items
+    BEGIN
+        SELECT DEPT_NAME INTO :EMPLOYEE.DEPT_NAME_DISP
+        FROM DEPARTMENTS WHERE DEPT_ID = :EMPLOYEE.DEPT_ID;
+    EXCEPTION WHEN NO_DATA_FOUND THEN :EMPLOYEE.DEPT_NAME_DISP := NULL;
+    END;
+
+    BEGIN
+        SELECT JOB_TITLE INTO :EMPLOYEE.JOB_TITLE_DISP
+        FROM JOB_TITLES WHERE JOB_ID = :EMPLOYEE.JOB_ID;
+    EXCEPTION WHEN NO_DATA_FOUND THEN :EMPLOYEE.JOB_TITLE_DISP := NULL;
+    END;
+
+    BEGIN
+        SELECT FIRST_NAME || ' ' || LAST_NAME INTO :EMPLOYEE.MANAGER_NAME_DISP
+        FROM EMPLOYEES WHERE EMP_ID = :EMPLOYEE.MANAGER_EMP_ID;
+    EXCEPTION WHEN NO_DATA_FOUND THEN :EMPLOYEE.MANAGER_NAME_DISP := NULL;
+    END;
+END;
+      </TriggerText>
+    </Trigger>
+
+    <Trigger Name="WHEN-VALIDATE-ITEM" TriggerStyle="PL/SQL" FireInEnterQueryMode="No">
+      <TriggerText>
+DECLARE
+    v_item VARCHAR2(60) := :SYSTEM.TRIGGER_ITEM;
+BEGIN
+    IF v_item = 'EMPLOYEE.EMAIL' THEN
+        IF :EMPLOYEE.EMAIL IS NOT NULL
+           AND NOT PKG_VALIDATION.validate_email_format(:EMPLOYEE.EMAIL) THEN
+            MESSAGE('Invalid email format');
+            RAISE FORM_TRIGGER_FAILURE;
+        END IF;
+
+    ELSIF v_item = 'EMPLOYEE.HIRE_DATE' THEN
+        IF :EMPLOYEE.HIRE_DATE > SYSDATE + 90 THEN
+            MESSAGE('Hire date cannot be more than 90 days in the future');
+            RAISE FORM_TRIGGER_FAILURE;
+        END IF;
+
+    ELSIF v_item = 'EMPLOYEE.DEPT_ID' THEN
+        -- Auto-populate department name
+        BEGIN
+            SELECT DEPT_NAME INTO :EMPLOYEE.DEPT_NAME_DISP
+            FROM DEPARTMENTS
+            WHERE DEPT_ID = :EMPLOYEE.DEPT_ID AND ACTIVE_FLAG = 'Y';
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                MESSAGE('Invalid department');
+                RAISE FORM_TRIGGER_FAILURE;
+        END;
+
+    ELSIF v_item = 'EMPLOYEE.JOB_ID' THEN
+        BEGIN
+            SELECT JOB_TITLE INTO :EMPLOYEE.JOB_TITLE_DISP
+            FROM JOB_TITLES
+            WHERE JOB_ID = :EMPLOYEE.JOB_ID AND ACTIVE_FLAG = 'Y';
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                MESSAGE('Invalid job title');
+                RAISE FORM_TRIGGER_FAILURE;
+        END;
+    END IF;
+END;
+      </TriggerText>
+    </Trigger>
+
+    <!-- Hidden audit columns -->
+    <Item Name="ACTIVE_FLAG" ItemType="Text Field" DataType="Char"
+          MaximumLength="1" Visible="No" DatabaseItem="Yes"/>
+    <Item Name="CREATED_BY" ItemType="Text Field" DataType="Char"
+          MaximumLength="30" Visible="No" DatabaseItem="Yes" InsertAllowed="Yes" UpdateAllowed="No"/>
+    <Item Name="CREATED_DATE" ItemType="Text Field" DataType="Date"
+          Visible="No" DatabaseItem="Yes" InsertAllowed="Yes" UpdateAllowed="No"/>
+    <Item Name="MODIFIED_BY" ItemType="Text Field" DataType="Char"
+          MaximumLength="30" Visible="No" DatabaseItem="Yes"/>
+    <Item Name="MODIFIED_DATE" ItemType="Text Field" DataType="Date"
+          Visible="No" DatabaseItem="Yes"/>
+  </Block>
+
+  <!-- ================================================================== -->
+  <!-- DETAIL BLOCK: SALARY RECORDS                                        -->
+  <!-- ================================================================== -->
+  <Block Name="SALARY" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.SALARY_RECORDS"
+         RecordsDisplayed="5" NavigationStyle="Change Block"
+         InsertAllowed="No" UpdateAllowed="No" DeleteAllowed="No">
+
+    <Item Name="SALARY_ID" Visible="No" DatabaseItem="Yes" PrimaryKey="Yes"/>
+    <Item Name="EMP_ID" Visible="No" DatabaseItem="Yes"/>
+    <Item Name="EFFECTIVE_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="Effective"
+          DatabaseItem="Yes" UpdateAllowed="No"/>
+    <Item Name="END_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="End Date"
+          DatabaseItem="Yes"/>
+    <Item Name="BASE_SALARY" ItemType="Text Field" DataType="Number"
+          FormatMask="$999,999,990.00" Width="120" Prompt="Salary"
+          DatabaseItem="Yes"/>
+    <Item Name="CHANGE_REASON" ItemType="Text Field" DataType="Char"
+          Width="120" Prompt="Reason" DatabaseItem="Yes"/>
+    <Item Name="CHANGE_PCT" ItemType="Text Field" DataType="Number"
+          FormatMask="990.00%" Width="80" Prompt="Change %"
+          DatabaseItem="Yes"/>
+
+    <Relation Name="EMP_SALARY_REL" DetailBlock="SALARY"
+              JoinCondition="SALARY.EMP_ID = EMPLOYEE.EMP_ID"
+              DeleteRecordBehavior="Cascading"
+              AutoQuery="Yes"/>
+  </Block>
+
+  <!-- ================================================================== -->
+  <!-- LOVs (List of Values)                                               -->
+  <!-- ================================================================== -->
+  <LOV Name="LOV_DEPARTMENTS" Title="Select Department"
+       AutoDisplay="No" AutoSkip="No"
+       Width="400" Height="300">
+    <RecordGroup Name="RG_DEPARTMENTS"
+                 QueryText="SELECT DEPT_ID, DEPT_CODE, DEPT_NAME, COST_CENTER
+                            FROM HRMS.DEPARTMENTS WHERE ACTIVE_FLAG = 'Y'
+                            ORDER BY DEPT_NAME"/>
+    <ColumnMapping LOVColumn="DEPT_ID" ReturnItem="EMPLOYEE.DEPT_ID"/>
+    <ColumnMapping LOVColumn="DEPT_NAME" ReturnItem="EMPLOYEE.DEPT_NAME_DISP"/>
+  </LOV>
+
+  <LOV Name="LOV_JOB_TITLES" Title="Select Job Title"
+       AutoDisplay="No" Width="450" Height="300">
+    <RecordGroup Name="RG_JOB_TITLES"
+                 QueryText="SELECT j.JOB_ID, j.JOB_CODE, j.JOB_TITLE, g.GRADE_NAME
+                            FROM HRMS.JOB_TITLES j
+                            JOIN HRMS.JOB_GRADES g ON j.GRADE_ID = g.GRADE_ID
+                            WHERE j.ACTIVE_FLAG = 'Y'
+                            ORDER BY j.JOB_TITLE"/>
+    <ColumnMapping LOVColumn="JOB_ID" ReturnItem="EMPLOYEE.JOB_ID"/>
+    <ColumnMapping LOVColumn="JOB_TITLE" ReturnItem="EMPLOYEE.JOB_TITLE_DISP"/>
+  </LOV>
+
+  <LOV Name="LOV_MANAGERS" Title="Select Manager"
+       AutoDisplay="No" Width="400" Height="300">
+    <RecordGroup Name="RG_MANAGERS"
+                 QueryText="SELECT EMP_ID, EMP_NUMBER,
+                                   FIRST_NAME || ' ' || LAST_NAME AS MANAGER_NAME
+                            FROM HRMS.EMPLOYEES
+                            WHERE EMPLOYMENT_STATUS = 'ACTIVE'
+                            ORDER BY LAST_NAME"/>
+    <ColumnMapping LOVColumn="EMP_ID" ReturnItem="EMPLOYEE.MANAGER_EMP_ID"/>
+    <ColumnMapping LOVColumn="MANAGER_NAME" ReturnItem="EMPLOYEE.MANAGER_NAME_DISP"/>
+  </LOV>
+
+  <LOV Name="LOV_LOCATIONS" Title="Select Location"
+       AutoDisplay="No" Width="400" Height="300">
+    <RecordGroup Name="RG_LOCATIONS"
+                 QueryText="SELECT LOCATION_CODE, LOCATION_NAME, CITY, STATE_PROVINCE
+                            FROM HRMS.LOCATIONS WHERE ACTIVE_FLAG = 'Y'
+                            ORDER BY LOCATION_NAME"/>
+    <ColumnMapping LOVColumn="LOCATION_CODE" ReturnItem="EMPLOYEE.LOCATION_CODE"/>
+  </LOV>
+
+  <!-- ================================================================== -->
+  <!-- CANVASES                                                            -->
+  <!-- ================================================================== -->
+  <Canvas Name="CVS_MAIN" CanvasType="Tab" Width="700" Height="500">
+    <TabPage Name="TP_PERSONAL" Label="Personal Information"/>
+    <TabPage Name="TP_JOB" Label="Job &amp; Compensation"/>
+    <TabPage Name="TP_DEPENDENTS" Label="Dependents"/>
+    <TabPage Name="TP_HISTORY" Label="Employment History"/>
+  </Canvas>
+
+  <Canvas Name="CVS_TOOLBAR" CanvasType="Horizontal Toolbar" Width="700" Height="38"/>
+
+  <!-- ================================================================== -->
+  <!-- WINDOWS                                                             -->
+  <!-- ================================================================== -->
+  <Window Name="WIN_EMPLOYEE" Title="Employee Maintenance"
+          WindowStyle="Document" Width="720" Height="550"
+          PrimaryCanvas="CVS_MAIN"/>
+
+  <!-- ================================================================== -->
+  <!-- ALERTS                                                              -->
+  <!-- ================================================================== -->
+  <Alert Name="ALT_CONFIRM_EXIT" AlertStyle="Caution"
+         Title="Confirm Exit"
+         Message="You have unsaved changes. Save before exiting?"
+         Button1Label="Save" Button2Label="Discard" Button3Label="Cancel"/>
+
+  <Alert Name="ALT_CONFIRM_DELETE" AlertStyle="Stop"
+         Title="Confirm Delete"
+         Message="Are you sure you want to delete this employee record?"
+         Button1Label="Yes" Button2Label="No"/>
+
+</FormModule>

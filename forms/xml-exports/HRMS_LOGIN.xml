@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Oracle Forms XML Export
+  Form Module: HRMS_LOGIN
+  Exported from Oracle Forms Builder 12c (12.2.1.4)
+  Original binary: HRMS_LOGIN.fmb
+
+  Purpose: Login form - authenticates user and opens main menu.
+  Canvas: Single content canvas with username/password fields and login button.
+  Known Issues:
+    - Password field transmitted in cleartext (Forms applet limitation)
+    - No account lockout after failed attempts
+    - No CAPTCHA or 2FA support
+-->
+<FormModule Name="HRMS_LOGIN" ConsoleWindow="CONSOLE"
+            FirstNavigationBlock="LOGIN"
+            Title="HRMS - Login">
+
+  <Trigger Name="WHEN-NEW-FORM-INSTANCE" TriggerStyle="PL/SQL" FireInEnterQueryMode="No">
+    <TriggerText>
+BEGIN
+    SET_WINDOW_PROPERTY(FORMS_MDI_WINDOW, TITLE, 'HRMS Login');
+    SET_WINDOW_PROPERTY('WIN_LOGIN', WINDOW_STATE, NORMAL);
+    GO_ITEM('LOGIN.USERNAME');
+END;
+    </TriggerText>
+  </Trigger>
+
+  <Block Name="LOGIN" QueryDataSourceType="None"
+         InsertAllowed="No" UpdateAllowed="No" DeleteAllowed="No"
+         RecordsDisplayed="1" NavigationStyle="Same Record">
+
+    <Item Name="COMPANY_LOGO" ItemType="Image" DataType="Char"
+          ImageFormat="GIF" ImageDepth="Original"
+          Width="200" Height="60"
+          CanvasName="CVS_LOGIN" XPosition="250" YPosition="20"/>
+
+    <Item Name="USERNAME" ItemType="Text Field" DataType="Char"
+          MaximumLength="100" Required="Yes"
+          CanvasName="CVS_LOGIN" XPosition="280" YPosition="120"
+          Width="200" Height="24"
+          Prompt="Username:" PromptAttachmentEdge="Start" PromptAlignment="Right"
+          PromptAttachmentOffset="80"/>
+
+    <Item Name="PASSWORD" ItemType="Text Field" DataType="Char"
+          MaximumLength="100" Required="Yes"
+          CanvasName="CVS_LOGIN" XPosition="280" YPosition="155"
+          Width="200" Height="24"
+          Prompt="Password:" PromptAttachmentEdge="Start" PromptAlignment="Right"
+          PromptAttachmentOffset="80"
+          ConcealData="Yes"/>
+
+    <Item Name="ERROR_MSG" ItemType="Display Item" DataType="Char"
+          MaximumLength="200"
+          CanvasName="CVS_LOGIN" XPosition="200" YPosition="230"
+          Width="300" Height="20"
+          ForegroundColor="red" FontWeight="Bold"/>
+
+    <Item Name="BTN_LOGIN" ItemType="Push Button"
+          Label="Login" Width="100" Height="30"
+          CanvasName="CVS_LOGIN" XPosition="300" YPosition="195">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+DECLARE
+    v_session_id NUMBER;
+BEGIN
+    :LOGIN.ERROR_MSG := NULL;
+
+    IF :LOGIN.USERNAME IS NULL OR :LOGIN.PASSWORD IS NULL THEN
+        :LOGIN.ERROR_MSG := 'Please enter username and password.';
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    BEGIN
+        v_session_id := PKG_SECURITY.authenticate(
+            :LOGIN.USERNAME,
+            :LOGIN.PASSWORD,
+            GET_APPLICATION_PROPERTY(CLIENT_HOST)
+        );
+
+        -- Store session info in global variables
+        :GLOBAL.session_id := TO_CHAR(v_session_id);
+        :GLOBAL.current_user := :LOGIN.USERNAME;
+
+        -- Get employee details
+        SELECT EMP_ID INTO :GLOBAL.current_emp_id
+        FROM EMPLOYEES
+        WHERE UPPER(EMAIL) = UPPER(:LOGIN.USERNAME)
+        AND EMPLOYMENT_STATUS = 'ACTIVE'
+        AND ROWNUM = 1;
+
+        -- Open main menu
+        OPEN_FORM('HRMS_MENU', ACTIVATE, SESSION);
+
+    EXCEPTION
+        WHEN OTHERS THEN
+            :LOGIN.ERROR_MSG := 'Invalid username or password.';
+            :LOGIN.PASSWORD := NULL;
+            GO_ITEM('LOGIN.PASSWORD');
+            RAISE FORM_TRIGGER_FAILURE;
+    END;
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <!-- Enter key triggers login -->
+    <Trigger Name="KEY-NEXT-ITEM" TriggerStyle="PL/SQL">
+      <TriggerText>
+BEGIN
+    IF :SYSTEM.CURSOR_ITEM = 'LOGIN.PASSWORD' THEN
+        DO_KEY('WHEN-BUTTON-PRESSED');
+    ELSE
+        NEXT_ITEM;
+    END IF;
+END;
+      </TriggerText>
+    </Trigger>
+  </Block>
+
+  <Canvas Name="CVS_LOGIN" CanvasType="Content" Width="700" Height="300"
+          BackgroundColor="white"/>
+
+  <Window Name="WIN_LOGIN" Title="HRMS Login"
+          WindowStyle="Dialog" Width="700" Height="320"
+          Closeable="No" Minimizable="No" Maximizable="No"
+          MoveAllowed="Yes" ResizeAllowed="No"
+          PrimaryCanvas="CVS_LOGIN"/>
+
+</FormModule>

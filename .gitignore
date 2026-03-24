@@ -1,0 +1,34 @@
+# Oracle Forms binary files (source XML exports are in forms/xml-exports/)
+*.fmb
+*.fmx
+*.mmb
+*.mmx
+*.pll
+*.plx
+*.olb
+*.rdf
+*.rep
+
+# Oracle database files
+*.dmp
+*.log
+*.trc
+*.aud
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Compiled output
+*.class
+*.jar
+*.war
+
+# OS files
+.DS_Store
+Desktop.ini

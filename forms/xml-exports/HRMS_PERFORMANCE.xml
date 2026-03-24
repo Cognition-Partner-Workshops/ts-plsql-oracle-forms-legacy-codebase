@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Oracle Forms XML Export
+  Form Module: HRMS_PERFORMANCE
+  Exported from Oracle Forms Builder 12c (12.2.1.4)
+  Original binary: HRMS_PERFORMANCE.fmb
+
+  Purpose: Performance review management - review cycles, self-assessments,
+           manager reviews, goal tracking, and rating calibration.
+  Canvas: 3 tab pages (Review Cycles, My Reviews, Goals)
+  Data Blocks: 4 (REVIEW_CYCLE, PERFORMANCE_REVIEW, PERFORMANCE_GOAL, REVIEW_DETAIL)
+-->
+<FormModule Name="HRMS_PERFORMANCE" ConsoleWindow="CONSOLE"
+            FirstNavigationBlock="REVIEW_CYCLE"
+            MenuModule="HRMS_MENU" MenuSource="File"
+            Title="HRMS - Performance Management">
+
+  <AttachedLibrary Name="HRMS_COMMON_LIB" LibraryLocation="HRMS_COMMON_LIB" LibrarySource="File"/>
+
+  <Trigger Name="WHEN-NEW-FORM-INSTANCE" TriggerStyle="PL/SQL" FireInEnterQueryMode="No">
+    <TriggerText>
+BEGIN
+    IF NOT PKG_SECURITY.is_session_valid(
+        TO_NUMBER(GET_APPLICATION_PROPERTY(USERNAME))) THEN
+        MESSAGE('Session expired.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    SET_WINDOW_PROPERTY(FORMS_MDI_WINDOW, TITLE,
+        'HRMS - Performance Management [' || :GLOBAL.current_user || ']');
+
+    GO_BLOCK('REVIEW_CYCLE');
+    SET_BLOCK_PROPERTY('REVIEW_CYCLE', DEFAULT_WHERE,
+        'STATUS IN (''OPEN'', ''DRAFT'') ORDER BY CYCLE_YEAR DESC');
+    EXECUTE_QUERY;
+END;
+    </TriggerText>
+  </Trigger>
+
+  <Block Name="REVIEW_CYCLE" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.REVIEW_CYCLES"
+         RecordsDisplayed="5" InsertAllowed="No" UpdateAllowed="No" DeleteAllowed="No">
+
+    <Item Name="CYCLE_ID" Visible="No" DatabaseItem="Yes" PrimaryKey="Yes"/>
+    <Item Name="CYCLE_NAME" ItemType="Text Field" DataType="Char"
+          Width="200" Prompt="Cycle" DatabaseItem="Yes"/>
+    <Item Name="CYCLE_YEAR" ItemType="Text Field" DataType="Number"
+          Width="50" Prompt="Year" DatabaseItem="Yes"/>
+    <Item Name="START_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="Start" DatabaseItem="Yes"/>
+    <Item Name="END_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="End" DatabaseItem="Yes"/>
+    <Item Name="STATUS" ItemType="Text Field" DataType="Char"
+          Width="80" Prompt="Status" DatabaseItem="Yes"/>
+  </Block>
+
+  <Block Name="PERFORMANCE_REVIEW" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.PERFORMANCE_REVIEWS"
+         RecordsDisplayed="8" InsertAllowed="No" UpdateAllowed="Yes" DeleteAllowed="No">
+
+    <Item Name="REVIEW_ID" Visible="No" DatabaseItem="Yes" PrimaryKey="Yes"/>
+    <Item Name="CYCLE_ID" Visible="No" DatabaseItem="Yes"/>
+    <Item Name="EMP_ID" Visible="No" DatabaseItem="Yes"/>
+    <Item Name="EMP_NAME_DISP" ItemType="Display Item" DataType="Char"
+          Width="180" Prompt="Employee"/>
+    <Item Name="STATUS" ItemType="Text Field" DataType="Char"
+          Width="120" Prompt="Status" DatabaseItem="Yes" UpdateAllowed="No"/>
+    <Item Name="OVERALL_RATING" ItemType="Text Field" DataType="Number"
+          FormatMask="9.0" Width="50" Prompt="Rating" DatabaseItem="Yes"/>
+    <Item Name="RATING_LABEL" ItemType="Display Item" DataType="Char"
+          Width="150" Prompt="Label" DatabaseItem="Yes"/>
+    <Item Name="SELF_ASSESSMENT" ItemType="Text Field" DataType="Char"
+          Width="300" Height="80" Prompt="Self Assessment"
+          DatabaseItem="Yes" MultiLine="Yes"/>
+    <Item Name="MANAGER_ASSESSMENT" ItemType="Text Field" DataType="Char"
+          Width="300" Height="80" Prompt="Manager Assessment"
+          DatabaseItem="Yes" MultiLine="Yes"/>
+
+    <Trigger Name="POST-QUERY" TriggerStyle="PL/SQL">
+      <TriggerText>
+BEGIN
+    SELECT FIRST_NAME || ' ' || LAST_NAME INTO :PERFORMANCE_REVIEW.EMP_NAME_DISP
+    FROM EMPLOYEES WHERE EMP_ID = :PERFORMANCE_REVIEW.EMP_ID;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN :PERFORMANCE_REVIEW.EMP_NAME_DISP := 'Unknown';
+END;
+      </TriggerText>
+    </Trigger>
+
+    <Relation Name="CYCLE_REVIEW_REL" DetailBlock="PERFORMANCE_REVIEW"
+              JoinCondition="PERFORMANCE_REVIEW.CYCLE_ID = REVIEW_CYCLE.CYCLE_ID"
+              AutoQuery="Yes"/>
+  </Block>
+
+  <Block Name="PERFORMANCE_GOAL" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.PERFORMANCE_GOALS"
+         RecordsDisplayed="5" InsertAllowed="Yes" UpdateAllowed="Yes" DeleteAllowed="No">
+
+    <Item Name="GOAL_ID" Visible="No" DatabaseItem="Yes" PrimaryKey="Yes"/>
+    <Item Name="REVIEW_ID" Visible="No" DatabaseItem="Yes"/>
+    <Item Name="GOAL_TITLE" ItemType="Text Field" DataType="Char"
+          Width="250" Prompt="Goal" DatabaseItem="Yes"/>
+    <Item Name="GOAL_CATEGORY" ItemType="List Item" DataType="Char"
+          Width="100" Prompt="Category" DatabaseItem="Yes" ListStyle="Poplist">
+      <ListItemElement Label="Business" Value="BUSINESS"/>
+      <ListItemElement Label="Development" Value="DEVELOPMENT"/>
+      <ListItemElement Label="Leadership" Value="LEADERSHIP"/>
+    </Item>
+    <Item Name="WEIGHT_PCT" ItemType="Text Field" DataType="Number"
+          FormatMask="990" Width="50" Prompt="Weight%" DatabaseItem="Yes"/>
+    <Item Name="PROGRESS_PCT" ItemType="Text Field" DataType="Number"
+          FormatMask="990" Width="50" Prompt="Progress%" DatabaseItem="Yes"/>
+    <Item Name="STATUS" ItemType="Text Field" DataType="Char"
+          Width="100" Prompt="Status" DatabaseItem="Yes"/>
+
+    <Relation Name="REVIEW_GOAL_REL" DetailBlock="PERFORMANCE_GOAL"
+              JoinCondition="PERFORMANCE_GOAL.REVIEW_ID = PERFORMANCE_REVIEW.REVIEW_ID"
+              AutoQuery="Yes"/>
+  </Block>
+
+  <Canvas Name="CVS_MAIN" CanvasType="Tab" Width="750" Height="520">
+    <TabPage Name="TP_CYCLES" Label="Review Cycles"/>
+    <TabPage Name="TP_REVIEWS" Label="My Reviews"/>
+    <TabPage Name="TP_GOALS" Label="Goals"/>
+  </Canvas>
+
+  <Window Name="WIN_PERFORMANCE" Title="Performance Management"
+          WindowStyle="Document" Width="770" Height="560"
+          PrimaryCanvas="CVS_MAIN"/>
+
+</FormModule>

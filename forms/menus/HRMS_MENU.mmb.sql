@@ -1,0 +1,60 @@
+-- ============================================================================
+-- HRMS_MENU - Menu Module Source
+-- Compiled binary: HRMS_MENU.mmb
+--
+-- This is the source representation of the Oracle Forms menu module.
+-- The actual .mmb file is a compiled binary created by Forms Builder.
+-- ============================================================================
+
+-- Main Menu Bar: MAIN_MENUBAR
+--   ├── File
+--   │   ├── Save                 (COMMIT_FORM)
+--   │   ├── Save & Exit          (COMMIT_FORM; EXIT_FORM)
+--   │   ├── ─────────
+--   │   ├── Print                (RUN_PRODUCT)
+--   │   ├── ─────────
+--   │   └── Exit                 (EXIT_FORM)
+--   │
+--   ├── Edit
+--   │   ├── Clear Record         (CLEAR_RECORD)
+--   │   ├── Duplicate Record     (DUPLICATE_RECORD)
+--   │   ├── Delete Record        (DELETE_RECORD)
+--   │   └── Insert Record        (CREATE_RECORD)
+--   │
+--   ├── Query
+--   │   ├── Enter Query          (ENTER_QUERY)
+--   │   ├── Execute Query        (EXECUTE_QUERY)
+--   │   ├── Cancel Query         (EXIT_FORM)
+--   │   ├── ─────────
+--   │   ├── Count Matching       (COUNT_QUERY)
+--   │   └── Fetch Next Set       (SCROLL_DOWN)
+--   │
+--   ├── Navigate
+--   │   ├── First Record         (FIRST_RECORD)
+--   │   ├── Previous Record      (PREVIOUS_RECORD)
+--   │   ├── Next Record          (NEXT_RECORD)
+--   │   ├── Last Record          (LAST_RECORD)
+--   │   ├── ─────────
+--   │   ├── Previous Block       (PREVIOUS_BLOCK)
+--   │   └── Next Block           (NEXT_BLOCK)
+--   │
+--   ├── Modules
+--   │   ├── Employee Management  (OPEN_FORM('HRMS_EMPLOYEE'))
+--   │   ├── Payroll Processing   (OPEN_FORM('HRMS_PAYROLL'))
+--   │   ├── Leave Management     (OPEN_FORM('HRMS_LEAVE'))
+--   │   ├── Performance Reviews  (OPEN_FORM('HRMS_PERFORMANCE'))
+--   │   ├── Reports & Analytics  (OPEN_FORM('HRMS_REPORTS'))
+--   │   └── System Admin         (OPEN_FORM('HRMS_ADMIN'))
+--   │
+--   ├── Admin
+--   │   ├── Change Password      (SHOW_WINDOW('WIN_CHANGE_PWD'))
+--   │   ├── System Parameters    (requires ADMIN permission)
+--   │   └── User Management      (requires ADMIN permission)
+--   │
+--   └── Help
+--       ├── Contents             (WEB.SHOW_DOCUMENT)
+--       ├── About HRMS           (SHOW_ALERT('ALT_ABOUT'))
+--       └── Support              (WEB.SHOW_DOCUMENT)
+
+-- Security: Menu items are enabled/disabled at runtime based on
+-- PKG_SECURITY.has_permission() checks in WHEN-NEW-FORM-INSTANCE

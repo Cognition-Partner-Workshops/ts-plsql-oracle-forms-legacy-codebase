@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Oracle Forms XML Export
+  Form Module: HRMS_PAYROLL
+  Exported from Oracle Forms Builder 12c (12.2.1.4)
+  Original binary: HRMS_PAYROLL.fmb
+
+  Purpose: Payroll processing form - pay period management, payroll run
+           creation, calculation, approval, and pay register generation.
+  Canvas: 3 tab pages (Pay Periods, Payroll Runs, Pay Details)
+  Data Blocks: 4 (PAY_PERIOD, PAYROLL_RUN, PAYROLL_DETAIL, PAYSLIP_SUMMARY)
+  LOVs: 3 (Period, Run Type, Employee)
+-->
+<FormModule Name="HRMS_PAYROLL" ConsoleWindow="CONSOLE"
+            FirstNavigationBlock="PAY_PERIOD"
+            MenuModule="HRMS_MENU" MenuSource="File"
+            Title="HRMS - Payroll Processing">
+
+  <AttachedLibrary Name="HRMS_COMMON_LIB" LibraryLocation="HRMS_COMMON_LIB" LibrarySource="File"/>
+
+  <!-- Form-Level Triggers -->
+  <Trigger Name="WHEN-NEW-FORM-INSTANCE" TriggerStyle="PL/SQL" FireInEnterQueryMode="No">
+    <TriggerText>
+DECLARE
+    v_session_id NUMBER;
+BEGIN
+    v_session_id := TO_NUMBER(GET_APPLICATION_PROPERTY(USERNAME));
+    IF NOT PKG_SECURITY.is_session_valid(v_session_id) THEN
+        MESSAGE('Session expired. Please log in again.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    -- Payroll module requires elevated permissions
+    IF NOT PKG_SECURITY.has_permission(:GLOBAL.current_emp_id, 'PAYROLL', 'VIEW') THEN
+        MESSAGE('You do not have permission to access the Payroll module.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    SET_WINDOW_PROPERTY(FORMS_MDI_WINDOW, TITLE,
+        'HRMS - Payroll Processing [' || :GLOBAL.current_user || ']');
+
+    GO_BLOCK('PAY_PERIOD');
+    SET_BLOCK_PROPERTY('PAY_PERIOD', DEFAULT_WHERE,
+        'STATUS = ''OPEN'' ORDER BY PERIOD_START_DATE DESC');
+    EXECUTE_QUERY;
+END;
+    </TriggerText>
+  </Trigger>
+
+  <!-- Data Blocks -->
+  <Block Name="PAY_PERIOD" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.PAY_PERIODS"
+         RecordsDisplayed="10" NavigationStyle="Change Record"
+         InsertAllowed="No" UpdateAllowed="No" DeleteAllowed="No">
+
+    <Item Name="PERIOD_ID" Visible="No" DatabaseItem="Yes" PrimaryKey="Yes"/>
+    <Item Name="PERIOD_NAME" ItemType="Text Field" DataType="Char"
+          Width="150" Prompt="Period" DatabaseItem="Yes"/>
+    <Item Name="PERIOD_START_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="Start" DatabaseItem="Yes"/>
+    <Item Name="PERIOD_END_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="End" DatabaseItem="Yes"/>
+    <Item Name="PAY_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="Pay Date" DatabaseItem="Yes"/>
+    <Item Name="STATUS" ItemType="Text Field" DataType="Char"
+          Width="80" Prompt="Status" DatabaseItem="Yes"/>
+  </Block>
+
+  <Block Name="PAYROLL_RUN" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.PAYROLL_RUNS"
+         RecordsDisplayed="5" NavigationStyle="Change Record"
+         InsertAllowed="No" UpdateAllowed="No" DeleteAllowed="No">
+
+    <Item Name="RUN_ID" Visible="No" DatabaseItem="Yes" PrimaryKey="Yes"/>
+    <Item Name="PERIOD_ID" Visible="No" DatabaseItem="Yes"/>
+    <Item Name="RUN_TYPE" ItemType="Text Field" DataType="Char"
+          Width="100" Prompt="Type" DatabaseItem="Yes"/>
+    <Item Name="RUN_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY HH24:MI" Width="140" Prompt="Run Date" DatabaseItem="Yes"/>
+    <Item Name="STATUS" ItemType="Text Field" DataType="Char"
+          Width="100" Prompt="Status" DatabaseItem="Yes"/>
+    <Item Name="EMPLOYEE_COUNT" ItemType="Text Field" DataType="Number"
+          Width="60" Prompt="# Emps" DatabaseItem="Yes"/>
+    <Item Name="TOTAL_GROSS" ItemType="Text Field" DataType="Number"
+          FormatMask="$999,999,990.00" Width="120" Prompt="Total Gross" DatabaseItem="Yes"/>
+    <Item Name="TOTAL_NET" ItemType="Text Field" DataType="Number"
+          FormatMask="$999,999,990.00" Width="120" Prompt="Total Net" DatabaseItem="Yes"/>
+
+    <!-- Action Buttons -->
+    <Item Name="BTN_CREATE_RUN" ItemType="Push Button"
+          Label="Create Run" Width="100" Height="25"
+          CanvasName="CVS_RUNS" TabPageName="TP_RUNS">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+DECLARE
+    v_run_id NUMBER;
+BEGIN
+    v_run_id := PKG_PAYROLL.create_payroll_run(
+        :PAY_PERIOD.PERIOD_ID, 'REGULAR', :GLOBAL.current_user);
+    MESSAGE('Payroll run ' || v_run_id || ' created successfully.');
+    GO_BLOCK('PAYROLL_RUN');
+    EXECUTE_QUERY;
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Item Name="BTN_CALCULATE" ItemType="Push Button"
+          Label="Calculate" Width="100" Height="25"
+          CanvasName="CVS_RUNS" TabPageName="TP_RUNS">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    IF :PAYROLL_RUN.STATUS != 'PENDING' THEN
+        MESSAGE('Can only calculate runs in PENDING status.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    MESSAGE('Calculating payroll... Please wait.');
+    SYNCHRONIZE;
+
+    PKG_PAYROLL.calculate_payroll(:PAYROLL_RUN.RUN_ID, :GLOBAL.current_user);
+
+    MESSAGE('Payroll calculation complete.');
+    EXECUTE_QUERY;
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Item Name="BTN_APPROVE" ItemType="Push Button"
+          Label="Approve" Width="100" Height="25"
+          CanvasName="CVS_RUNS" TabPageName="TP_RUNS">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    IF NOT PKG_SECURITY.has_permission(:GLOBAL.current_emp_id, 'PAYROLL', 'APPROVE') THEN
+        MESSAGE('You do not have permission to approve payroll.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    PKG_PAYROLL.approve_payroll(:PAYROLL_RUN.RUN_ID, :GLOBAL.current_user);
+    MESSAGE('Payroll run approved.');
+    EXECUTE_QUERY;
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Relation Name="PERIOD_RUN_REL" DetailBlock="PAYROLL_RUN"
+              JoinCondition="PAYROLL_RUN.PERIOD_ID = PAY_PERIOD.PERIOD_ID"
+              AutoQuery="Yes"/>
+  </Block>
+
+  <!-- Canvases -->
+  <Canvas Name="CVS_MAIN" CanvasType="Tab" Width="750" Height="520">
+    <TabPage Name="TP_PERIODS" Label="Pay Periods"/>
+    <TabPage Name="TP_RUNS" Label="Payroll Runs"/>
+    <TabPage Name="TP_DETAILS" Label="Pay Details"/>
+  </Canvas>
+
+  <Window Name="WIN_PAYROLL" Title="Payroll Processing"
+          WindowStyle="Document" Width="770" Height="560"
+          PrimaryCanvas="CVS_MAIN"/>
+
+</FormModule>

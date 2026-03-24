@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Oracle Forms XML Export
+  Form Module: HRMS_LEAVE
+  Exported from Oracle Forms Builder 12c (12.2.1.4)
+  Original binary: HRMS_LEAVE.fmb
+
+  Purpose: Leave management - request submission, approval workflow,
+           balance inquiry, and team calendar view.
+  Canvas: 4 tab pages (My Requests, Submit Request, Approvals, Team Calendar)
+  Data Blocks: 5 (LEAVE_REQUEST, NEW_REQUEST, LEAVE_BALANCE, PENDING_APPROVAL, TEAM_CAL)
+  LOVs: 3 (Leave Type, Employee, Half-Day Period)
+-->
+<FormModule Name="HRMS_LEAVE" ConsoleWindow="CONSOLE"
+            FirstNavigationBlock="LEAVE_REQUEST"
+            MenuModule="HRMS_MENU" MenuSource="File"
+            Title="HRMS - Leave Management">
+
+  <AttachedLibrary Name="HRMS_COMMON_LIB" LibraryLocation="HRMS_COMMON_LIB" LibrarySource="File"/>
+
+  <Trigger Name="WHEN-NEW-FORM-INSTANCE" TriggerStyle="PL/SQL" FireInEnterQueryMode="No">
+    <TriggerText>
+BEGIN
+    -- Session validation
+    IF NOT PKG_SECURITY.is_session_valid(
+        TO_NUMBER(GET_APPLICATION_PROPERTY(USERNAME))) THEN
+        MESSAGE('Session expired.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    SET_WINDOW_PROPERTY(FORMS_MDI_WINDOW, TITLE,
+        'HRMS - Leave Management [' || :GLOBAL.current_user || ']');
+
+    -- Show current user's leave requests by default
+    SET_BLOCK_PROPERTY('LEAVE_REQUEST', DEFAULT_WHERE,
+        'EMP_ID = ' || :GLOBAL.current_emp_id || ' ORDER BY CREATED_DATE DESC');
+
+    -- Populate leave type LOV
+    POPULATE_GROUP('RG_LEAVE_TYPES');
+
+    GO_BLOCK('LEAVE_REQUEST');
+    EXECUTE_QUERY;
+
+    -- Show leave balances
+    GO_BLOCK('LEAVE_BALANCE');
+    EXECUTE_QUERY;
+    GO_BLOCK('LEAVE_REQUEST');
+END;
+    </TriggerText>
+  </Trigger>
+
+  <!-- My Leave Requests -->
+  <Block Name="LEAVE_REQUEST" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.LEAVE_REQUESTS"
+         RecordsDisplayed="8" NavigationStyle="Change Record"
+         InsertAllowed="No" UpdateAllowed="No" DeleteAllowed="No">
+
+    <Item Name="REQUEST_ID" Visible="No" DatabaseItem="Yes" PrimaryKey="Yes"/>
+    <Item Name="EMP_ID" Visible="No" DatabaseItem="Yes"/>
+    <Item Name="LEAVE_TYPE_NAME_DISP" ItemType="Display Item" DataType="Char"
+          Width="120" Prompt="Type" DatabaseItem="No"/>
+    <Item Name="START_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="From" DatabaseItem="Yes"/>
+    <Item Name="END_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="To" DatabaseItem="Yes"/>
+    <Item Name="TOTAL_DAYS" ItemType="Text Field" DataType="Number"
+          FormatMask="990.0" Width="50" Prompt="Days" DatabaseItem="Yes"/>
+    <Item Name="STATUS" ItemType="Text Field" DataType="Char"
+          Width="100" Prompt="Status" DatabaseItem="Yes"/>
+    <Item Name="REASON" ItemType="Text Field" DataType="Char"
+          Width="200" Prompt="Reason" DatabaseItem="Yes"/>
+
+    <Item Name="BTN_CANCEL_REQUEST" ItemType="Push Button"
+          Label="Cancel Request" Width="110" Height="25">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+BEGIN
+    IF :LEAVE_REQUEST.STATUS NOT IN ('PENDING', 'APPROVED') THEN
+        MESSAGE('Only pending or approved requests can be cancelled.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    IF SHOW_ALERT('ALT_CONFIRM_CANCEL') = ALERT_BUTTON1 THEN
+        PKG_LEAVE.cancel_leave_request(
+            :LEAVE_REQUEST.REQUEST_ID, 'Cancelled by employee', :GLOBAL.current_user);
+        MESSAGE('Leave request cancelled.');
+        EXECUTE_QUERY;
+    END IF;
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+
+    <Trigger Name="POST-QUERY" TriggerStyle="PL/SQL">
+      <TriggerText>
+BEGIN
+    SELECT lt.LEAVE_TYPE_NAME INTO :LEAVE_REQUEST.LEAVE_TYPE_NAME_DISP
+    FROM LEAVE_TYPES lt
+    JOIN LEAVE_REQUESTS lr ON lt.LEAVE_TYPE_ID = lr.LEAVE_TYPE_ID
+    WHERE lr.REQUEST_ID = :LEAVE_REQUEST.REQUEST_ID;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        :LEAVE_REQUEST.LEAVE_TYPE_NAME_DISP := 'Unknown';
+END;
+      </TriggerText>
+    </Trigger>
+  </Block>
+
+  <!-- Submit New Request (control block) -->
+  <Block Name="NEW_REQUEST" QueryDataSourceType="None"
+         InsertAllowed="Yes" UpdateAllowed="No" DeleteAllowed="No"
+         RecordsDisplayed="1">
+
+    <Item Name="NR_LEAVE_TYPE_ID" ItemType="Text Field" DataType="Number"
+          Width="80" Prompt="Leave Type:" LOV="LOV_LEAVE_TYPES"/>
+    <Item Name="NR_LEAVE_TYPE_DISP" ItemType="Display Item" DataType="Char" Width="150"/>
+    <Item Name="NR_START_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="From:"/>
+    <Item Name="NR_END_DATE" ItemType="Text Field" DataType="Date"
+          FormatMask="MM/DD/YYYY" Width="100" Prompt="To:"/>
+    <Item Name="NR_HALF_DAY" ItemType="Check Box" DataType="Char"
+          CheckBoxMapping="Y,N" Width="20" Prompt="Half Day"/>
+    <Item Name="NR_REASON" ItemType="Text Field" DataType="Char"
+          MaximumLength="500" Width="300" Height="60" Prompt="Reason:"
+          MultiLine="Yes"/>
+    <Item Name="NR_CALC_DAYS" ItemType="Display Item" DataType="Number"
+          Width="50" Prompt="Total Days:"/>
+    <Item Name="NR_BALANCE_DISP" ItemType="Display Item" DataType="Number"
+          Width="50" Prompt="Available Balance:"/>
+
+    <Item Name="BTN_SUBMIT" ItemType="Push Button"
+          Label="Submit Request" Width="120" Height="30">
+      <Trigger Name="WHEN-BUTTON-PRESSED" TriggerStyle="PL/SQL">
+        <TriggerText>
+DECLARE
+    v_request_id NUMBER;
+BEGIN
+    -- Validate required fields
+    IF :NEW_REQUEST.NR_LEAVE_TYPE_ID IS NULL THEN
+        MESSAGE('Please select a leave type.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+    IF :NEW_REQUEST.NR_START_DATE IS NULL THEN
+        MESSAGE('Please enter a start date.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+    IF :NEW_REQUEST.NR_END_DATE IS NULL THEN
+        MESSAGE('Please enter an end date.');
+        RAISE FORM_TRIGGER_FAILURE;
+    END IF;
+
+    v_request_id := PKG_LEAVE.submit_leave_request(
+        p_emp_id        => :GLOBAL.current_emp_id,
+        p_leave_type_id => :NEW_REQUEST.NR_LEAVE_TYPE_ID,
+        p_start_date    => :NEW_REQUEST.NR_START_DATE,
+        p_end_date      => :NEW_REQUEST.NR_END_DATE,
+        p_half_day_flag => NVL(:NEW_REQUEST.NR_HALF_DAY, 'N'),
+        p_reason        => :NEW_REQUEST.NR_REASON,
+        p_user          => :GLOBAL.current_user
+    );
+
+    MESSAGE('Leave request #' || v_request_id || ' submitted successfully.');
+    CLEAR_BLOCK(NO_VALIDATE);
+
+    -- Refresh requests list
+    GO_BLOCK('LEAVE_REQUEST');
+    EXECUTE_QUERY;
+END;
+        </TriggerText>
+      </Trigger>
+    </Item>
+  </Block>
+
+  <!-- Leave Balance Display -->
+  <Block Name="LEAVE_BALANCE" QueryDataSourceType="Table"
+         QueryDataSourceName="HRMS.LEAVE_BALANCES"
+         RecordsDisplayed="6" InsertAllowed="No" UpdateAllowed="No" DeleteAllowed="No">
+
+    <Item Name="LEAVE_TYPE_NAME_DISP" ItemType="Display Item" Width="120" Prompt="Type"/>
+    <Item Name="OPENING_BALANCE" ItemType="Display Item" DataType="Number"
+          FormatMask="990.0" Width="60" Prompt="Opening"/>
+    <Item Name="ACCRUED" ItemType="Display Item" DataType="Number"
+          FormatMask="990.0" Width="60" Prompt="Accrued"/>
+    <Item Name="USED" ItemType="Display Item" DataType="Number"
+          FormatMask="990.0" Width="60" Prompt="Used"/>
+    <Item Name="PENDING" ItemType="Display Item" DataType="Number"
+          FormatMask="990.0" Width="60" Prompt="Pending"/>
+    <Item Name="AVAILABLE" ItemType="Display Item" DataType="Number"
+          FormatMask="990.0" Width="60" Prompt="Available"/>
+  </Block>
+
+  <!-- LOVs -->
+  <LOV Name="LOV_LEAVE_TYPES" Title="Select Leave Type" Width="350" Height="250">
+    <RecordGroup Name="RG_LEAVE_TYPES"
+                 QueryText="SELECT LEAVE_TYPE_ID, LEAVE_TYPE_CODE, LEAVE_TYPE_NAME
+                            FROM HRMS.LEAVE_TYPES WHERE ACTIVE_FLAG = 'Y'
+                            ORDER BY LEAVE_TYPE_NAME"/>
+    <ColumnMapping LOVColumn="LEAVE_TYPE_ID" ReturnItem="NEW_REQUEST.NR_LEAVE_TYPE_ID"/>
+    <ColumnMapping LOVColumn="LEAVE_TYPE_NAME" ReturnItem="NEW_REQUEST.NR_LEAVE_TYPE_DISP"/>
+  </LOV>
+
+  <!-- Canvases -->
+  <Canvas Name="CVS_MAIN" CanvasType="Tab" Width="700" Height="480">
+    <TabPage Name="TP_MY_REQUESTS" Label="My Requests"/>
+    <TabPage Name="TP_NEW_REQUEST" Label="Submit Request"/>
+    <TabPage Name="TP_APPROVALS" Label="Pending Approvals"/>
+    <TabPage Name="TP_CALENDAR" Label="Team Calendar"/>
+  </Canvas>
+
+  <Window Name="WIN_LEAVE" Title="Leave Management"
+          WindowStyle="Document" Width="720" Height="520"
+          PrimaryCanvas="CVS_MAIN"/>
+
+  <Alert Name="ALT_CONFIRM_CANCEL" AlertStyle="Caution"
+         Title="Confirm Cancellation"
+         Message="Are you sure you want to cancel this leave request?"
+         Button1Label="Yes" Button2Label="No"/>
+
+</FormModule>
