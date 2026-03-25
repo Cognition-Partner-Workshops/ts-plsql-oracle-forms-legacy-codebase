@@ -462,7 +462,7 @@ Executive Office (EXEC)
 | ADJUSTMENT | NUMBER(5,1) | DEFAULT 0 | Manual adjustments |
 | CARRYOVER_FROM_PREV | NUMBER(5,1) | DEFAULT 0 | Days carried from previous year |
 | CARRYOVER_EXPIRY_DT | DATE | | When carryover expires |
-| **AVAILABLE** | **NUMBER (virtual)** | | **Computed: `OPENING_BALANCE + ACCRUED - USED + ADJUSTMENT`** |
+| **AVAILABLE** | **NUMBER (virtual)** | | **Computed: `OPENING_BALANCE + ACCRUED - USED + ADJUSTMENT - PENDING`** |
 | CREATED_BY | VARCHAR2(30) | | Audit |
 | CREATED_DATE | DATE | | Audit |
 | MODIFIED_BY | VARCHAR2(30) | | Audit |
@@ -527,7 +527,7 @@ Executive Office (EXEC)
 | CREATED_BY | VARCHAR2(30) | | Audit |
 | CREATED_DATE | DATE | | Audit |
 
-**Seed Data**: 10 US federal holidays (New Year, MLK Day, Presidents Day, Memorial Day, Juneteenth, Independence Day, Labor Day, Columbus Day, Veterans Day, Thanksgiving, Christmas)
+**Seed Data**: 10 holidays (New Year's Day, MLK Day, Presidents' Day, Memorial Day, Independence Day, Labor Day, Thanksgiving, Day After Thanksgiving, Christmas Eve, Christmas Day)
 
 **Bug**: `PKG_LEAVE.calculate_business_days` and `PKG_VALIDATION.is_business_day` only check exact date match - they do not handle observed holidays (e.g., when July 4 falls on a Saturday, the observed Friday is not excluded).
 
