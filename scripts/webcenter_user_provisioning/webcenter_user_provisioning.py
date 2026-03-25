@@ -21,7 +21,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin
@@ -39,19 +39,6 @@ RETRY_BACKOFF_FACTOR = 0.5
 RETRY_STATUS_CODES = (429, 500, 502, 503, 504)
 
 REQUIRED_CSV_COLUMNS = {"user_id", "first_name", "last_name", "email"}
-OPTIONAL_CSV_COLUMNS = {
-    "display_name",
-    "department",
-    "role",
-    "title",
-    "manager",
-    "phone",
-    "organization",
-    "locale",
-    "timezone",
-    "password",
-}
-
 # WebCenter REST API endpoints
 WC_PORTAL_USERS_ENDPOINT = "/rest/api/people"
 WC_CONTENT_ACCOUNTS_ENDPOINT = "/idcplg?IdcService=ADD_USER"
@@ -113,7 +100,7 @@ class ProvisioningResult:
 
     def __post_init__(self) -> None:
         if not self.timestamp:
-            self.timestamp = datetime.utcnow().isoformat()
+            self.timestamp = datetime.now(timezone.utc).isoformat()
 
 
 @dataclass
@@ -396,7 +383,10 @@ def create_user_content(
         return ProvisioningResult(user_id=user.user_id, success=True, message="Dry run — skipped")
 
     try:
-        response = session.post(url, data=payload, timeout=config.timeout)
+        content_headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        response = session.post(
+            url, data=payload, timeout=config.timeout, headers=content_headers
+        )
         if response.status_code in (200, 201):
             # UCM returns 200 even for some errors; check response body
             body = response.text
@@ -587,7 +577,7 @@ def provision_users(
 def write_report(summary: ProvisioningSummary, report_path: str, logger: logging.Logger) -> None:
     """Write a JSON report of the provisioning results."""
     report = {
-        "run_timestamp": datetime.utcnow().isoformat(),
+        "run_timestamp": datetime.now(timezone.utc).isoformat(),
         "total": summary.total,
         "created": summary.created,
         "failed": summary.failed,

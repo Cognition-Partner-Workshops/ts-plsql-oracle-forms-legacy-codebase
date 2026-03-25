@@ -29,6 +29,11 @@ Thumbs.db
 *.jar
 *.war
 
+# WebCenter provisioning script artifacts
+scripts/webcenter_user_provisioning/config.json
+scripts/webcenter_user_provisioning/provisioning_report.json
+scripts/webcenter_user_provisioning/*.log
+
 # OS files
 .DS_Store
 Desktop.ini
