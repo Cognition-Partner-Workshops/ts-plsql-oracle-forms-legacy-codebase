@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRMS Employee Maintenance - Spring Boot / React Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #1976d2;
+      --primary-dark: #1565c0;
+      --primary-light: #e3f2fd;
+      --secondary: #9c27b0;
+      --success: #2e7d32;
+      --warning: #ed6c02;
+      --error: #d32f2f;
+      --bg: #f5f5f5;
+      --surface: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-disabled: #94a3b8;
+      --border: #e2e8f0;
+      --sidebar-bg: #1e293b;
+      --sidebar-text: #cbd5e1;
+      --sidebar-active: #3b82f6;
+      --radius: 8px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sidebar-logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+    }
+
+    .sidebar-logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: -0.3px;
+    }
+
+    .sidebar-logo-version {
+      font-size: 11px;
+      color: var(--text-disabled);
+      font-weight: 400;
+    }
+
+    .sidebar-nav {
+      padding: 12px 8px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar-section-label {
+      padding: 8px 12px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 14px;
+      margin: 1px 0;
+      text-decoration: none;
+      color: var(--sidebar-text);
+    }
+
+    .sidebar-item:hover {
+      background: rgba(255,255,255,0.08);
+      color: white;
+    }
+
+    .sidebar-item.active {
+      background: rgba(59,130,246,0.15);
+      color: var(--sidebar-active);
+      font-weight: 500;
+    }
+
+    .sidebar-item .material-icons-outlined {
+      font-size: 20px;
+      opacity: 0.7;
+    }
+
+    .sidebar-item.active .material-icons-outlined {
+      opacity: 1;
+    }
+
+    .sidebar-user {
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sidebar-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .sidebar-user-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-user-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: white;
+    }
+
+    .sidebar-user-role {
+      font-size: 11px;
+      color: var(--text-disabled);
+    }
+
+    /* ========== MAIN CONTENT ========== */
+    .main {
+      flex: 1;
+      margin-left: 260px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ========== TOP BAR ========== */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .breadcrumb a {
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    .breadcrumb a:hover {
+      color: var(--primary);
+    }
+
+    .breadcrumb-sep {
+      color: var(--text-disabled);
+    }
+
+    .breadcrumb-current {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ========== BUTTONS ========== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.15s;
+      line-height: 1;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-outlined {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-outlined:hover { background: var(--bg); }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover { background: #1b5e20; }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--error);
+      border: 1px solid rgba(211,47,47,0.3);
+    }
+
+    .btn-danger:hover { background: rgba(211,47,47,0.05); }
+
+    .btn-icon {
+      padding: 8px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .btn-icon:hover { background: var(--bg); color: var(--text-primary); }
+
+    .btn .material-icons-outlined { font-size: 16px; }
+
+    /* ========== PAGE CONTENT ========== */
+    .page-content {
+      padding: 24px;
+      flex: 1;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .page-header-left { display: flex; align-items: center; gap: 16px; }
+
+    .emp-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-leave { background: #fef3c7; color: #92400e; }
+    .badge-terminated { background: #fee2e2; color: #991b1b; }
+    .badge-fulltime { background: var(--primary-light); color: var(--primary); }
+
+    .page-header-actions { display: flex; gap: 8px; align-items: center; }
+
+    /* ========== TABS ========== */
+    .tabs-container {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      padding: 0 4px;
+    }
+
+    .tab {
+      padding: 14px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .tab:hover { color: var(--primary); }
+
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .tab .material-icons-outlined { font-size: 18px; }
+
+    .tab-panel { display: none; padding: 24px; }
+    .tab-panel.active { display: block; }
+
+    /* ========== FORM ========== */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full-width { grid-column: 1 / -1; }
+
+    .form-section {
+      margin-bottom: 28px;
+    }
+
+    .form-section:last-child { margin-bottom: 0; }
+
+    .form-section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-section-title .material-icons-outlined {
+      font-size: 18px;
+      color: var(--primary);
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    label .required { color: var(--error); margin-left: 2px; }
+
+    input, select, textarea {
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text-primary);
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      width: 100%;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(25,118,210,0.1);
+    }
+
+    input:read-only, input:disabled {
+      background: #f8fafc;
+      color: var(--text-secondary);
+      cursor: default;
+    }
+
+    input:read-only:focus { border-color: var(--border); box-shadow: none; }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .input-with-icon {
+      position: relative;
+    }
+
+    .input-with-icon input { padding-right: 36px; }
+
+    .input-with-icon .input-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-disabled);
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .input-with-icon .input-icon:hover { color: var(--primary); }
+
+    .input-display {
+      padding: 9px 12px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      background: #f8fafc;
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--text-disabled);
+    }
+
+    .form-error {
+      font-size: 11px;
+      color: var(--error);
+    }
+
+    /* ========== TABLE ========== */
+    .data-table-wrapper {
+      overflow-x: auto;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 10px 12px;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+
+    .data-table tr:hover td { background: #f8fafc; }
+
+    .salary-amount {
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+
+    .change-positive { color: var(--success); }
+    .change-negative { color: var(--error); }
+
+    /* ========== CARDS ========== */
+    .info-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .info-card-label {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .info-card-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .info-card-sub {
+      font-size: 12px;
+      color: var(--text-disabled);
+      margin-top: 2px;
+    }
+
+    /* ========== EMPTY STATE ========== */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state .material-icons-outlined {
+      font-size: 48px;
+      color: var(--text-disabled);
+      margin-bottom: 12px;
+    }
+
+    .empty-state-text {
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    /* ========== ANNOTATIONS ========== */
+    .annotation {
+      position: relative;
+    }
+
+    .annotation::after {
+      content: attr(data-legacy);
+      position: absolute;
+      bottom: -18px;
+      left: 0;
+      font-size: 10px;
+      color: var(--primary);
+      opacity: 0;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      background: var(--primary-light);
+      padding: 1px 6px;
+      border-radius: 3px;
+      z-index: 10;
+    }
+
+    .show-annotations .annotation::after {
+      opacity: 1;
+    }
+
+    /* ========== TOOLBAR ========== */
+    .form-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+    }
+
+    .form-toolbar-left, .form-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .divider-v {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+
+    /* ========== TOGGLE ========== */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .toggle {
+      width: 36px;
+      height: 20px;
+      background: var(--border);
+      border-radius: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle.active { background: var(--primary); }
+
+    .toggle::after {
+      content: '';
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .toggle.active::after { transform: translateX(16px); }
+
+    /* ========== TOAST ========== */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 9999;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast .material-icons-outlined { font-size: 20px; color: #4ade80; }
+
+    /* ========== BANNER ========== */
+    .legacy-banner {
+      background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+      color: white;
+      padding: 10px 24px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .legacy-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legacy-banner code {
+      background: rgba(255,255,255,0.15);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 11px;
+    }
+
+    /* ========== DIALOG ========== */
+    .dialog-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .dialog-overlay.show { opacity: 1; pointer-events: auto; }
+
+    .dialog {
+      background: var(--surface);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      width: 480px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .dialog-header {
+      padding: 20px 24px 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .dialog-body { padding: 16px 24px; }
+
+    .dialog-footer {
+      padding: 12px 24px 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid-3 { grid-template-columns: 1fr 1fr; }
+      .info-cards { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====================================================================== -->
+  <!-- SIDEBAR (Maps: HRMS_MENU.xml + HRMS_MENU.mmb.sql)                      -->
+  <!-- ====================================================================== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <span class="material-icons-outlined">group</span>
+        </div>
+        <div>
+          <div class="sidebar-logo-text">HRMS</div>
+          <div class="sidebar-logo-version">v5.0 &mdash; Spring Boot</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Main Modules</div>
+      <!-- Maps: HRMS_MENU BTN_EMPLOYEES -> React Route /employees -->
+      <a class="sidebar-item active" href="#">
+        <span class="material-icons-outlined">badge</span> Employees
+      </a>
+      <!-- Maps: HRMS_MENU BTN_PAYROLL -> React Route /payroll -->
+      <a class="sidebar-item" href="#">
+        <span class="material-icons-outlined">payments</span> Payroll
+      </a>
+      <!-- Maps: HRMS_MENU BTN_LEAVE -> React Route /leave -->
+      <a class="sidebar-item" href="#">
+        <span class="material-icons-outlined">event_busy</span> Leave Management
+      </a>
+      <!-- Maps: HRMS_MENU BTN_PERFORMANCE -> React Route /performance -->
+      <a class="sidebar-item" href="#">
+        <span class="material-icons-outlined">trending_up</span> Performance
+      </a>
+      <!-- Maps: HRMS_MENU BTN_REPORTS -> React Route /reports -->
+      <a class="sidebar-item" href="#">
+        <span class="material-icons-outlined">assessment</span> Reports
+      </a>
+
+      <div class="sidebar-section-label">Administration</div>
+      <!-- Maps: MNU_ADMIN > System Parameters -->
+      <a class="sidebar-item" href="#">
+        <span class="material-icons-outlined">settings</span> System Settings
+      </a>
+      <!-- Maps: MNU_ADMIN > User Sessions -->
+      <a class="sidebar-item" href="#">
+        <span class="material-icons-outlined">manage_accounts</span> User Sessions
+      </a>
+      <a class="sidebar-item" href="#">
+        <span class="material-icons-outlined">history</span> Audit Log
+      </a>
+    </nav>
+    <!-- Maps: :GLOBAL.current_user session state -->
+    <div class="sidebar-user">
+      <div class="sidebar-avatar">SA</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">Sarah Admin</div>
+        <div class="sidebar-user-role">HR Director</div>
+      </div>
+      <span class="material-icons-outlined" style="color:var(--sidebar-text);cursor:pointer;font-size:18px;" title="Logout">logout</span>
+    </div>
+  </aside>
+
+  <!-- ====================================================================== -->
+  <!-- MAIN CONTENT AREA                                                       -->
+  <!-- ====================================================================== -->
+  <div class="main">
+    <!-- Maps: Oracle Forms window title with session info -->
+    <div class="legacy-banner">
+      <div class="legacy-banner-left">
+        <span class="material-icons-outlined" style="font-size:16px;">info</span>
+        Migrated from Oracle Forms 12c &mdash; Source: <code>HRMS_EMPLOYEE.fmb</code>
+        &rarr; <code>EmployeeController.java</code> + <code>&lt;EmployeePage /&gt;</code>
+      </div>
+      <div class="toggle-container">
+        <span>Show legacy mappings</span>
+        <div class="toggle" id="toggleAnnotations" onclick="toggleAnnotations()"></div>
+      </div>
+    </div>
+
+    <!-- Maps: Window title bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="breadcrumb">
+          <a href="#">Home</a>
+          <span class="breadcrumb-sep">/</span>
+          <a href="#">Employees</a>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current">EMP-001025</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-icon" title="Search Employees" onclick="showToast('Search panel would open (GET /api/employees?query=...)')">
+          <span class="material-icons-outlined">search</span>
+        </button>
+        <button class="btn btn-icon" title="Notifications">
+          <span class="material-icons-outlined">notifications</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="page-content" id="pageContent">
+      <!-- ================================================================ -->
+      <!-- PAGE HEADER with employee summary                                 -->
+      <!-- ================================================================ -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <!-- Maps: EMPLOYEE.PHOTO_BLOB (Image item) -->
+          <div class="emp-avatar">JD</div>
+          <div>
+            <div class="page-title">Jane M. Doe</div>
+            <div class="page-subtitle">
+              EMP-001025 &nbsp;&bull;&nbsp; Sr. Software Engineer &nbsp;&bull;&nbsp; Engineering
+              &nbsp;
+              <!-- Maps: EMPLOYEE.EMPLOYMENT_STATUS (List Item, display) -->
+              <span class="badge badge-active">Active</span>
+              <!-- Maps: EMPLOYEE.EMPLOYMENT_TYPE (List Item) -->
+              <span class="badge badge-fulltime">Full-Time</span>
+            </div>
+          </div>
+        </div>
+        <div class="page-header-actions">
+          <!-- Maps: toolbar_insert (HRMS_COMMON_LIB) -->
+          <button class="btn btn-outlined" onclick="showToast('POST /api/employees (create new employee)')">
+            <span class="material-icons-outlined">person_add</span> New Employee
+          </button>
+          <!-- Maps: COMMIT_FORM -> PUT /api/employees/:id -->
+          <button class="btn btn-success" onclick="showToast('PUT /api/employees/1025 - Changes saved')">
+            <span class="material-icons-outlined">save</span> Save Changes
+          </button>
+          <button class="btn btn-icon" title="More actions" onclick="document.getElementById('actionsDialog').classList.add('show')">
+            <span class="material-icons-outlined">more_vert</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- SUMMARY CARDS                                                     -->
+      <!-- ================================================================ -->
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="info-card-label">Current Salary</div>
+          <div class="info-card-value">$125,000</div>
+          <div class="info-card-sub">Annual &bull; Effective 01/15/2025</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-label">Tenure</div>
+          <div class="info-card-value">6.3 yrs</div>
+          <div class="info-card-sub">Hired 09/15/2019</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-label">Leave Balance</div>
+          <div class="info-card-value">14.5 days</div>
+          <div class="info-card-sub">PTO remaining (2026)</div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-label">Last Review</div>
+          <div class="info-card-value">4.2 / 5.0</div>
+          <div class="info-card-sub">2025 Annual Review</div>
+        </div>
+      </div>
+
+      <!-- ================================================================ -->
+      <!-- TAB CONTAINER                                                     -->
+      <!-- Maps: CVS_MAIN Canvas (Tab type) with 4 TabPages                  -->
+      <!-- ================================================================ -->
+      <div class="tabs-container">
+        <div class="tab-bar">
+          <!-- Maps: TP_PERSONAL TabPage -->
+          <div class="tab active" data-tab="personal" onclick="switchTab('personal')">
+            <span class="material-icons-outlined">person</span> Personal Information
+          </div>
+          <!-- Maps: TP_JOB TabPage -->
+          <div class="tab" data-tab="job" onclick="switchTab('job')">
+            <span class="material-icons-outlined">work</span> Job &amp; Compensation
+          </div>
+          <!-- Maps: TP_DEPENDENTS TabPage -->
+          <div class="tab" data-tab="dependents" onclick="switchTab('dependents')">
+            <span class="material-icons-outlined">family_restroom</span> Dependents
+          </div>
+          <!-- Maps: TP_HISTORY TabPage -->
+          <div class="tab" data-tab="history" onclick="switchTab('history')">
+            <span class="material-icons-outlined">history</span> Employment History
+          </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 1: PERSONAL INFORMATION                                     -->
+        <!-- Maps: TP_PERSONAL tab page of EMPLOYEE data block               -->
+        <!-- ============================================================== -->
+        <div class="tab-panel active" id="tab-personal">
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="material-icons-outlined">badge</span> Basic Information
+            </div>
+            <div class="form-grid">
+              <!-- Maps: EMPLOYEE.EMP_NUMBER (display only, InsertAllowed=No, UpdateAllowed=No) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.EMP_NUMBER (Text Field, ReadOnly)">
+                <label>Employee Number</label>
+                <input type="text" value="EMP-001025" readonly>
+              </div>
+
+              <!-- Maps: EMPLOYEE.FIRST_NAME (Required, CaseRestriction=Upper) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.FIRST_NAME (Required, CaseRestriction=Upper)">
+                <label>First Name <span class="required">*</span></label>
+                <input type="text" value="JANE" style="text-transform:uppercase">
+              </div>
+
+              <!-- Maps: EMPLOYEE.LAST_NAME (Required, CaseRestriction=Upper) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.LAST_NAME (Required, CaseRestriction=Upper)">
+                <label>Last Name <span class="required">*</span></label>
+                <input type="text" value="DOE" style="text-transform:uppercase">
+              </div>
+
+              <!-- Maps: EMPLOYEE.DATE_OF_BIRTH (Date, FormatMask=MM/DD/YYYY) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.DATE_OF_BIRTH (Date, MM/DD/YYYY)">
+                <label>Date of Birth</label>
+                <input type="date" value="1990-03-15">
+              </div>
+
+              <!-- Maps: EMPLOYEE.GENDER (List Item, Poplist: M/F/O) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.GENDER (List Item / Poplist)">
+                <label>Gender</label>
+                <select>
+                  <option value="">-- Select --</option>
+                  <option value="M">Male</option>
+                  <option value="F" selected>Female</option>
+                  <option value="O">Other</option>
+                </select>
+              </div>
+
+              <!-- Maps: EMPLOYEE.MARITAL_STATUS (List Item, Poplist) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.MARITAL_STATUS (List Item / Poplist)">
+                <label>Marital Status</label>
+                <select>
+                  <option value="">-- Select --</option>
+                  <option value="SINGLE" selected>Single</option>
+                  <option value="MARRIED">Married</option>
+                  <option value="DIVORCED">Divorced</option>
+                  <option value="WIDOWED">Widowed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="material-icons-outlined">mail</span> Contact Information
+            </div>
+            <div class="form-grid">
+              <!-- Maps: EMPLOYEE.EMAIL (CaseRestriction=Lower, WHEN-VALIDATE-ITEM triggers PKG_VALIDATION.validate_email_format) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.EMAIL (WHEN-VALIDATE-ITEM -> PKG_VALIDATION)">
+                <label>Email</label>
+                <input type="email" value="jane.doe@company.com" style="text-transform:lowercase">
+                <div class="form-hint">Validated by @Email (Bean Validation) - replaces PKG_VALIDATION.validate_email_format()</div>
+              </div>
+
+              <!-- Maps: EMPLOYEE.PHONE_WORK -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.PHONE_WORK (Text Field)">
+                <label>Work Phone</label>
+                <input type="tel" value="(555) 123-4567">
+              </div>
+
+              <!-- Maps: EMPLOYEE.PHONE_MOBILE -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.PHONE_MOBILE (Text Field)">
+                <label>Mobile Phone</label>
+                <input type="tel" value="(555) 987-6543">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="material-icons-outlined">home</span> Address
+            </div>
+            <div class="form-grid">
+              <!-- Maps: EMPLOYEE.ADDRESS_LINE1 -->
+              <div class="form-group full-width annotation" data-legacy="EMPLOYEE.ADDRESS_LINE1 (Text Field, Width=300)">
+                <label>Address Line 1</label>
+                <input type="text" value="123 Main Street">
+              </div>
+
+              <!-- Maps: EMPLOYEE.ADDRESS_LINE2 -->
+              <div class="form-group full-width annotation" data-legacy="EMPLOYEE.ADDRESS_LINE2 (Text Field, Width=300)">
+                <label>Address Line 2</label>
+                <input type="text" value="Apt 4B">
+              </div>
+
+              <!-- Maps: EMPLOYEE.CITY -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.CITY (Text Field)">
+                <label>City</label>
+                <input type="text" value="San Francisco">
+              </div>
+
+              <!-- Maps: EMPLOYEE.STATE_PROVINCE -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.STATE_PROVINCE (Text Field)">
+                <label>State</label>
+                <input type="text" value="CA">
+              </div>
+
+              <!-- Maps: EMPLOYEE.POSTAL_CODE -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.POSTAL_CODE (Text Field)">
+                <label>Zip Code</label>
+                <input type="text" value="94102">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 2: JOB & COMPENSATION                                       -->
+        <!-- Maps: TP_JOB tab page + SALARY detail block                     -->
+        <!-- ============================================================== -->
+        <div class="tab-panel" id="tab-job">
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="material-icons-outlined">work</span> Job Assignment
+            </div>
+            <div class="form-grid">
+              <!-- Maps: EMPLOYEE.HIRE_DATE (Required, FormatMask=MM/DD/YYYY, WHEN-VALIDATE-ITEM checks SYSDATE+90) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.HIRE_DATE (Required, validated <= SYSDATE+90)">
+                <label>Hire Date <span class="required">*</span></label>
+                <input type="date" value="2019-09-15">
+                <div class="form-hint">Max 90 days in the future (replaces Forms WHEN-VALIDATE-ITEM trigger)</div>
+              </div>
+
+              <!-- Maps: EMPLOYEE.DEPT_ID + LOV_DEPARTMENTS + DEPT_NAME_DISP (POST-QUERY display) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.DEPT_ID (LOV=LOV_DEPARTMENTS) + DEPT_NAME_DISP">
+                <label>Department <span class="required">*</span></label>
+                <div class="input-with-icon">
+                  <input type="text" value="Engineering" placeholder="Search departments...">
+                  <span class="material-icons-outlined input-icon" title="LOV_DEPARTMENTS: Autocomplete replaces Oracle Forms LOV popup">search</span>
+                </div>
+                <div class="form-hint">Autocomplete replaces LOV_DEPARTMENTS (Record Group: RG_DEPARTMENTS)</div>
+              </div>
+
+              <!-- Maps: EMPLOYEE.JOB_ID + LOV_JOB_TITLES + JOB_TITLE_DISP -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.JOB_ID (LOV=LOV_JOB_TITLES) + JOB_TITLE_DISP">
+                <label>Job Title <span class="required">*</span></label>
+                <div class="input-with-icon">
+                  <input type="text" value="Sr. Software Engineer">
+                  <span class="material-icons-outlined input-icon" title="LOV_JOB_TITLES">search</span>
+                </div>
+              </div>
+
+              <!-- Maps: EMPLOYEE.MANAGER_EMP_ID + LOV_MANAGERS + MANAGER_NAME_DISP -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.MANAGER_EMP_ID (LOV=LOV_MANAGERS) + MANAGER_NAME_DISP">
+                <label>Manager</label>
+                <div class="input-with-icon">
+                  <input type="text" value="Robert Smith">
+                  <span class="material-icons-outlined input-icon" title="LOV_MANAGERS">search</span>
+                </div>
+              </div>
+
+              <!-- Maps: EMPLOYEE.LOCATION_CODE + LOV_LOCATIONS -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.LOCATION_CODE (LOV=LOV_LOCATIONS)">
+                <label>Location</label>
+                <div class="input-with-icon">
+                  <input type="text" value="SF-HQ - San Francisco Headquarters">
+                  <span class="material-icons-outlined input-icon" title="LOV_LOCATIONS">search</span>
+                </div>
+              </div>
+
+              <!-- Maps: EMPLOYEE.EMPLOYMENT_TYPE (List Item, Poplist) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.EMPLOYMENT_TYPE (List Item / Poplist)">
+                <label>Employment Type</label>
+                <select>
+                  <option value="FULL_TIME" selected>Full-Time</option>
+                  <option value="PART_TIME">Part-Time</option>
+                  <option value="CONTRACT">Contract</option>
+                  <option value="INTERN">Intern</option>
+                </select>
+              </div>
+
+              <!-- Maps: EMPLOYEE.EMPLOYMENT_STATUS (List Item, UpdateAllowed=No) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.EMPLOYMENT_STATUS (UpdateAllowed=No)">
+                <label>Employment Status</label>
+                <select disabled>
+                  <option value="ACTIVE" selected>Active</option>
+                  <option value="ON_LEAVE">On Leave</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="TERMINATED">Terminated</option>
+                </select>
+                <div class="form-hint">Read-only; changed via Transfer / Terminate / Rehire workflows</div>
+              </div>
+
+              <!-- Maps: EMPLOYEE.TERMINATION_DATE (UpdateAllowed=No) -->
+              <div class="form-group annotation" data-legacy="EMPLOYEE.TERMINATION_DATE (UpdateAllowed=No)">
+                <label>Termination Date</label>
+                <input type="date" value="" disabled placeholder="N/A">
+              </div>
+            </div>
+          </div>
+
+          <!-- Maps: SALARY detail block (master-detail: EMP_SALARY_REL) -->
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="material-icons-outlined">account_balance</span>
+              Salary History
+              <span style="font-weight:400;color:var(--text-disabled);font-size:12px;margin-left:auto;">
+                Master-Detail: EMPLOYEE &rarr; SALARY (via EMP_SALARY_REL)
+              </span>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <!-- Maps: SALARY.EFFECTIVE_DATE (FormatMask=MM/DD/YYYY) -->
+                    <th>Effective Date</th>
+                    <!-- Maps: SALARY.END_DATE -->
+                    <th>End Date</th>
+                    <!-- Maps: SALARY.BASE_SALARY (FormatMask=$999,999,990.00) -->
+                    <th>Base Salary</th>
+                    <!-- Maps: SALARY.CHANGE_REASON -->
+                    <th>Reason</th>
+                    <!-- Maps: SALARY.CHANGE_PCT (FormatMask=990.00%) -->
+                    <th>Change %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>01/15/2025</td>
+                    <td>&mdash;</td>
+                    <td class="salary-amount">$125,000.00</td>
+                    <td>PROMOTION</td>
+                    <td class="change-positive">+8.70%</td>
+                  </tr>
+                  <tr>
+                    <td>03/01/2023</td>
+                    <td>01/14/2025</td>
+                    <td class="salary-amount">$115,000.00</td>
+                    <td>MERIT</td>
+                    <td class="change-positive">+4.55%</td>
+                  </tr>
+                  <tr>
+                    <td>01/01/2022</td>
+                    <td>02/28/2023</td>
+                    <td class="salary-amount">$110,000.00</td>
+                    <td>ANNUAL_INCREASE</td>
+                    <td class="change-positive">+10.00%</td>
+                  </tr>
+                  <tr>
+                    <td>09/15/2019</td>
+                    <td>12/31/2021</td>
+                    <td class="salary-amount">$100,000.00</td>
+                    <td>NEW_HIRE</td>
+                    <td>&mdash;</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 3: DEPENDENTS                                               -->
+        <!-- Maps: TP_DEPENDENTS tab (EMPLOYEE_DEPENDENTS table)             -->
+        <!-- ============================================================== -->
+        <div class="tab-panel" id="tab-dependents">
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="material-icons-outlined">family_restroom</span>
+              Dependents
+              <button class="btn btn-outlined" style="margin-left:auto;font-size:12px;" onclick="showToast('POST /api/employees/1025/dependents')">
+                <span class="material-icons-outlined" style="font-size:14px;">add</span> Add Dependent
+              </button>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Relationship</th>
+                    <th>Date of Birth</th>
+                    <th>Benefits Enrolled</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Michael Doe</td>
+                    <td>CHILD</td>
+                    <td>06/12/2021</td>
+                    <td><span class="badge badge-active">Yes</span></td>
+                    <td>
+                      <button class="btn btn-icon" style="padding:4px;" title="Edit"><span class="material-icons-outlined" style="font-size:16px;">edit</span></button>
+                      <button class="btn btn-icon" style="padding:4px;color:var(--error);" title="Remove"><span class="material-icons-outlined" style="font-size:16px;">delete</span></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="material-icons-outlined">emergency</span>
+              Emergency Contacts
+              <button class="btn btn-outlined" style="margin-left:auto;font-size:12px;" onclick="showToast('POST /api/employees/1025/emergency-contacts')">
+                <span class="material-icons-outlined" style="font-size:14px;">add</span> Add Contact
+              </button>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Relationship</th>
+                    <th>Phone (Primary)</th>
+                    <th>Phone (Alt)</th>
+                    <th>Priority</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Mary Doe</td>
+                    <td>Mother</td>
+                    <td>(555) 222-3333</td>
+                    <td>(555) 444-5555</td>
+                    <td>1</td>
+                    <td>
+                      <button class="btn btn-icon" style="padding:4px;" title="Edit"><span class="material-icons-outlined" style="font-size:16px;">edit</span></button>
+                      <button class="btn btn-icon" style="padding:4px;color:var(--error);" title="Remove"><span class="material-icons-outlined" style="font-size:16px;">delete</span></button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>John Smith</td>
+                    <td>Friend</td>
+                    <td>(555) 666-7777</td>
+                    <td>&mdash;</td>
+                    <td>2</td>
+                    <td>
+                      <button class="btn btn-icon" style="padding:4px;" title="Edit"><span class="material-icons-outlined" style="font-size:16px;">edit</span></button>
+                      <button class="btn btn-icon" style="padding:4px;color:var(--error);" title="Remove"><span class="material-icons-outlined" style="font-size:16px;">delete</span></button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- TAB 4: EMPLOYMENT HISTORY                                       -->
+        <!-- Maps: TP_HISTORY tab (EMPLOYEE_HISTORY table, read-only)        -->
+        <!-- ============================================================== -->
+        <div class="tab-panel" id="tab-history">
+          <div class="form-section">
+            <div class="form-section-title">
+              <span class="material-icons-outlined">timeline</span> Employment History
+              <span style="font-weight:400;color:var(--text-disabled);font-size:12px;margin-left:auto;">
+                Source: EMPLOYEE_HISTORY table (read-only, populated by PKG_EMPLOYEE lifecycle ops)
+              </span>
+            </div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Change Type</th>
+                    <th>Details</th>
+                    <th>Changed By</th>
+                    <th>Comments</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>01/15/2025</td>
+                    <td><span class="badge" style="background:#dbeafe;color:#1e40af;">PROMOTION</span></td>
+                    <td>Software Engineer &rarr; Sr. Software Engineer<br>Salary: $115,000 &rarr; $125,000</td>
+                    <td>robert.smith</td>
+                    <td>Promoted based on 2024 performance review</td>
+                  </tr>
+                  <tr>
+                    <td>03/01/2023</td>
+                    <td><span class="badge" style="background:#dcfce7;color:#166534;">SALARY_CHANGE</span></td>
+                    <td>Salary: $110,000 &rarr; $115,000</td>
+                    <td>robert.smith</td>
+                    <td>Annual merit increase</td>
+                  </tr>
+                  <tr>
+                    <td>06/01/2021</td>
+                    <td><span class="badge" style="background:#fef3c7;color:#92400e;">TRANSFER</span></td>
+                    <td>Dept: Product &rarr; Engineering<br>Manager: Alice Wong &rarr; Robert Smith</td>
+                    <td>admin.hr</td>
+                    <td>Organizational restructuring</td>
+                  </tr>
+                  <tr>
+                    <td>09/15/2019</td>
+                    <td><span class="badge" style="background:#e0e7ff;color:#3730a3;">HIRE</span></td>
+                    <td>Dept: Product, Job: Software Engineer<br>Starting Salary: $100,000</td>
+                    <td>admin.hr</td>
+                    <td>New hire from campus recruitment</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- FORM TOOLBAR                                                    -->
+        <!-- Maps: CVS_TOOLBAR + HRMS_COMMON_LIB toolbar_* procedures        -->
+        <!-- ============================================================== -->
+        <div class="form-toolbar">
+          <div class="form-toolbar-left">
+            <!-- Maps: toolbar_save (HRMS_COMMON_LIB) -> COMMIT_FORM -->
+            <button class="btn btn-primary" onclick="showToast('PUT /api/employees/1025 - Saved')">
+              <span class="material-icons-outlined">save</span> Save
+            </button>
+            <!-- Maps: toolbar_clear (HRMS_COMMON_LIB) -> CLEAR_FORM -->
+            <button class="btn btn-outlined" onclick="showToast('form.reset() - Form cleared')">
+              <span class="material-icons-outlined">restart_alt</span> Reset
+            </button>
+            <div class="divider-v"></div>
+            <!-- Maps: toolbar_query -> EXECUTE_QUERY -->
+            <button class="btn btn-outlined" onclick="showToast('GET /api/employees?status=ACTIVE - Refreshed')">
+              <span class="material-icons-outlined">refresh</span> Refresh
+            </button>
+          </div>
+          <div class="form-toolbar-right">
+            <!-- Maps: toolbar_first / toolbar_prev / toolbar_next / toolbar_last -->
+            <button class="btn btn-icon" title="First Record (toolbar_first)" onclick="showToast('Pagination: page=0')">
+              <span class="material-icons-outlined">first_page</span>
+            </button>
+            <button class="btn btn-icon" title="Previous Record (toolbar_prev)" onclick="showToast('Pagination: page--')">
+              <span class="material-icons-outlined">chevron_left</span>
+            </button>
+            <span style="font-size:13px;color:var(--text-secondary);padding:0 8px;">Record 3 of 247</span>
+            <button class="btn btn-icon" title="Next Record (toolbar_next)" onclick="showToast('Pagination: page++')">
+              <span class="material-icons-outlined">chevron_right</span>
+            </button>
+            <button class="btn btn-icon" title="Last Record (toolbar_last)" onclick="showToast('Pagination: page=last')">
+              <span class="material-icons-outlined">last_page</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- ACTIONS DIALOG                                                          -->
+  <!-- Maps: Employee lifecycle operations from PKG_EMPLOYEE                   -->
+  <!-- ====================================================================== -->
+  <div class="dialog-overlay" id="actionsDialog" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="dialog">
+      <div class="dialog-header">Employee Actions</div>
+      <div class="dialog-body">
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">
+          These map to PKG_EMPLOYEE lifecycle operations, exposed as REST endpoints:
+        </p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-outlined" style="justify-content:flex-start;width:100%;" onclick="showToast('POST /api/employees/1025/transfer');document.getElementById('actionsDialog').classList.remove('show')">
+            <span class="material-icons-outlined">swap_horiz</span> Transfer Employee
+            <span style="margin-left:auto;font-size:11px;color:var(--text-disabled);">PKG_EMPLOYEE.transfer_employee()</span>
+          </button>
+          <button class="btn btn-outlined" style="justify-content:flex-start;width:100%;" onclick="showToast('POST /api/employees/1025/promote');document.getElementById('actionsDialog').classList.remove('show')">
+            <span class="material-icons-outlined">trending_up</span> Promote Employee
+            <span style="margin-left:auto;font-size:11px;color:var(--text-disabled);">PKG_EMPLOYEE.promote_employee()</span>
+          </button>
+          <button class="btn btn-danger" style="justify-content:flex-start;width:100%;" onclick="showToast('POST /api/employees/1025/terminate');document.getElementById('actionsDialog').classList.remove('show')">
+            <span class="material-icons-outlined">person_off</span> Terminate Employee
+            <span style="margin-left:auto;font-size:11px;color:var(--text-disabled);">PKG_EMPLOYEE.terminate_employee()</span>
+          </button>
+        </div>
+      </div>
+      <div class="dialog-footer">
+        <button class="btn btn-outlined" onclick="document.getElementById('actionsDialog').classList.remove('show')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- TOAST                                                                   -->
+  <!-- Maps: Forms MESSAGE() built-in -> Toast notification                    -->
+  <!-- ====================================================================== -->
+  <div class="toast" id="toast">
+    <span class="material-icons-outlined">check_circle</span>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    // Tab switching (replaces GO_BLOCK / tab page navigation)
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+    }
+
+    // Toast notification (replaces Oracle Forms MESSAGE() built-in)
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // Toggle legacy annotation overlay
+    function toggleAnnotations() {
+      const toggle = document.getElementById('toggleAnnotations');
+      const content = document.getElementById('pageContent');
+      toggle.classList.toggle('active');
+      content.classList.toggle('show-annotations');
+    }
+  </script>
+</body>
+</html>
