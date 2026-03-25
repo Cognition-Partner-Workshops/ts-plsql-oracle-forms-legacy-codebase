@@ -1,0 +1,128 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  validate-sql:
+    name: Validate SQL & PL/SQL
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install SQL linting tools
+        run: pip install sqlfluff
+
+      - name: Lint SQL schema files
+        run: |
+          echo "=== Linting SQL files ==="
+          sqlfluff lint schema/ --dialect oracle || true
+          echo "=== SQL linting complete ==="
+
+      - name: Validate PL/SQL file structure
+        run: |
+          echo "=== Validating PL/SQL packages ==="
+          for pkg_spec in plsql/packages/*.pks; do
+            pkg_name=$(basename "$pkg_spec" .pks)
+            pkg_body="plsql/packages/${pkg_name}.pkb"
+            if [ -f "$pkg_body" ]; then
+              echo "PASS: $pkg_name has both spec (.pks) and body (.pkb)"
+            else
+              echo "WARN: $pkg_name has spec but missing body"
+            fi
+          done
+          echo ""
+          echo "Checking trigger files..."
+          ls plsql/triggers/*.sql && echo "Triggers found" || echo "No trigger files"
+          echo ""
+          echo "Checking form exports..."
+          ls forms/xml-exports/*.xml && echo "Form XML exports found" || echo "No form exports"
+          echo "=== Validation complete ==="
+
+  security-secret-scan:
+    name: Secret Scanning (Gitleaks)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  security-hardcoded-credentials:
+    name: Scan for Hardcoded Credentials
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Scan PL/SQL for hardcoded credentials
+        run: |
+          echo "=== Scanning for potential hardcoded credentials ==="
+          patterns=(
+            "PASSWORD\s*:=\s*'"
+            "DBMS_CRYPTO"
+            "UTL_HTTP"
+            "UTL_SMTP"
+            "UTL_FILE"
+            "EXECUTE\s+IMMEDIATE"
+            "FTP.*password"
+            "smtp.*server"
+          )
+          found=0
+          for pattern in "${patterns[@]}"; do
+            matches=$(grep -rni "$pattern" plsql/ forms/ --include="*.pks" --include="*.pkb" --include="*.sql" --include="*.xml" 2>/dev/null || true)
+            if [ -n "$matches" ]; then
+              echo ""
+              echo "--- Pattern: $pattern ---"
+              echo "$matches"
+              found=$((found + 1))
+            fi
+          done
+          echo ""
+          echo "=== Scan complete: $found pattern categories found ==="
+          echo "Review findings for potential security issues."
+
+  security-trivy:
+    name: Filesystem Vulnerability Scan (Trivy)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy FS Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
