@@ -47,6 +47,17 @@ WC_IDCS_USERS_ENDPOINT = "/admin/v1/Users"
 LOG_FORMAT = "%(asctime)s [%(levelname)s] %(message)s"
 LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+_SENSITIVE_KEYS = {"password", "dPassword"}
+
+
+def _redact_payload(payload: dict) -> dict:
+    """Return a shallow copy of payload with sensitive fields redacted."""
+    redacted = dict(payload)
+    for key in _SENSITIVE_KEYS:
+        if key in redacted:
+            redacted[key] = "***REDACTED***"
+    return redacted
+
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -194,14 +205,15 @@ def _get_idcs_token(config: WebCenterConfig) -> str:
 # ---------------------------------------------------------------------------
 # CSV Parsing
 # ---------------------------------------------------------------------------
-def parse_csv(csv_path: str, logger: logging.Logger) -> list[UserRecord]:
-    """Parse a CSV file and return a list of UserRecord objects."""
+def parse_csv(csv_path: str, logger: logging.Logger) -> tuple[list[UserRecord], int]:
+    """Parse a CSV file and return a list of UserRecord objects and a count of skipped rows."""
     csv_file = Path(csv_path)
     if not csv_file.exists():
         logger.error("CSV file not found: %s", csv_path)
         sys.exit(1)
 
     users: list[UserRecord] = []
+    skipped = 0
     with open(csv_file, newline="", encoding="utf-8-sig") as fh:
         reader = csv.DictReader(fh)
 
@@ -229,6 +241,7 @@ def parse_csv(csv_path: str, logger: logging.Logger) -> list[UserRecord]:
                     row_num,
                     ", ".join(sorted(empty_required)),
                 )
+                skipped += 1
                 continue
 
             user = UserRecord(
@@ -251,8 +264,8 @@ def parse_csv(csv_path: str, logger: logging.Logger) -> list[UserRecord]:
                 user.display_name = f"{user.first_name} {user.last_name}"
             users.append(user)
 
-    logger.info("Parsed %d valid user record(s) from %s", len(users), csv_path)
-    return users
+    logger.info("Parsed %d valid user record(s) from %s (%d skipped)", len(users), csv_path, skipped)
+    return users, skipped
 
 
 # ---------------------------------------------------------------------------
@@ -298,7 +311,7 @@ def create_user_portal(
     url = urljoin(config.base_url.rstrip("/") + "/", WC_PORTAL_USERS_ENDPOINT.lstrip("/"))
     payload = _build_portal_payload(user, config)
 
-    logger.debug("POST %s — payload: %s", url, json.dumps(payload, indent=2))
+    logger.debug("POST %s — payload: %s", url, json.dumps(_redact_payload(payload), indent=2))
 
     if config.dry_run:
         logger.info("[DRY RUN] Would create user: %s (%s)", user.user_id, user.email)
@@ -376,7 +389,7 @@ def create_user_content(
     url = urljoin(config.base_url.rstrip("/") + "/", WC_CONTENT_ACCOUNTS_ENDPOINT.lstrip("/"))
     payload = _build_content_payload(user, config)
 
-    logger.debug("POST %s — payload: %s", url, json.dumps(payload, indent=2))
+    logger.debug("POST %s — payload: %s", url, json.dumps(_redact_payload(payload), indent=2))
 
     if config.dry_run:
         logger.info("[DRY RUN] Would create user: %s (%s)", user.user_id, user.email)
@@ -478,7 +491,7 @@ def create_user_idcs(
     url = urljoin(config.base_url.rstrip("/") + "/", WC_IDCS_USERS_ENDPOINT.lstrip("/"))
     payload = _build_idcs_payload(user, config)
 
-    logger.debug("POST %s — payload: %s", url, json.dumps(payload, indent=2))
+    logger.debug("POST %s — payload: %s", url, json.dumps(_redact_payload(payload), indent=2))
 
     if config.dry_run:
         logger.info("[DRY RUN] Would create IDCS user: %s (%s)", user.user_id, user.email)
@@ -796,13 +809,14 @@ def main() -> None:
     logger.info("SSL Verify  : %s", config.verify_ssl)
 
     # Parse CSV
-    users = parse_csv(args.csv, logger)
+    users, csv_skipped = parse_csv(args.csv, logger)
     if not users:
         logger.warning("No valid users found in CSV. Exiting.")
         sys.exit(0)
 
     # Provision users
     summary = provision_users(users, config, logger)
+    summary.skipped = csv_skipped
 
     # Print summary and write report
     print_summary(summary, logger)
