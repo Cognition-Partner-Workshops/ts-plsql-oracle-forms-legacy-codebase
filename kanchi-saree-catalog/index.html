@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanchi Saree Collection - Premium Kanchipuram Silk Sarees</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">Kanchi Saree Collection</h1>
+                <nav class="nav">
+                    <a href="#home">Home</a>
+                    <a href="#catalog">Catalog</a>
+                    <a href="#about">About</a>
+                    <a href="#care">Care Guide</a>
+                    <a href="#contact">Contact</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-overlay"></div>
+        <div class="container hero-content">
+            <h2>Authentic Kanchipuram Silk Sarees</h2>
+            <p>Handwoven elegance from the silk city of India, crafted with centuries of tradition</p>
+            <a href="#catalog" class="btn btn-primary">Explore Collection</a>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <h2 class="section-title">The Legacy of Kanchipuram Silk</h2>
+            <div class="about-grid">
+                <div class="about-card">
+                    <div class="about-icon">&#127912;</div>
+                    <h3>Heritage Weaving</h3>
+                    <p>Kanchipuram sarees have been handwoven for over 400 years in the temple town of Kanchipuram, Tamil Nadu. Each saree takes 15-20 days to complete using traditional pit looms.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-icon">&#10024;</div>
+                    <h3>Pure Mulberry Silk</h3>
+                    <p>Crafted from authentic high-quality mulberry silk threads with real zari (gold or silver) work. The hallmark of a genuine Kanchi saree is its lustrous sheen and durability.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-icon">&#128176;</div>
+                    <h3>Silk Mark Certified</h3>
+                    <p>All our sarees carry the official Silk Mark certification, guaranteeing 100% pure silk authenticity. Look for the Silk Mark label for genuine products.</p>
+                </div>
+                <div class="about-card">
+                    <div class="about-icon">&#127872;</div>
+                    <h3>Temple & Zari Borders</h3>
+                    <p>Featuring signature temple designs, intricate zari borders, and classic motifs like peacocks, checks, stripes, and floral patterns inspired by temple architecture.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Catalog Section -->
+    <section id="catalog" class="catalog">
+        <div class="container">
+            <h2 class="section-title">Our Saree Collection</h2>
+            <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="bridal">Bridal</button>
+                <button class="filter-btn" data-filter="wedding">Wedding Guest</button>
+                <button class="filter-btn" data-filter="festive">Festive</button>
+                <button class="filter-btn" data-filter="casual">Casual Silk</button>
+            </div>
+            <div class="product-grid" id="productGrid">
+                <!-- Products populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Care Guide Section -->
+    <section id="care" class="care-guide">
+        <div class="container">
+            <h2 class="section-title">Saree Care Guide</h2>
+            <div class="care-grid">
+                <div class="care-card">
+                    <h3>Storage</h3>
+                    <ul>
+                        <li>Store in a cool, dry place wrapped in muslin cloth</li>
+                        <li>Refold every 3-6 months to prevent crease marks</li>
+                        <li>Keep silica gel packets to absorb moisture</li>
+                        <li>Store separately from cotton garments</li>
+                    </ul>
+                </div>
+                <div class="care-card">
+                    <h3>Cleaning</h3>
+                    <ul>
+                        <li>Dry clean only for pure silk sarees</li>
+                        <li>Avoid exposure to direct sunlight for extended periods</li>
+                        <li>Spot clean minor stains with mild soap and cold water</li>
+                        <li>Never wring or twist the fabric</li>
+                    </ul>
+                </div>
+                <div class="care-card">
+                    <h3>Ironing</h3>
+                    <ul>
+                        <li>Iron on low heat with a pressing cloth</li>
+                        <li>Steam iron is preferred for silk sarees</li>
+                        <li>Never iron directly on zari work</li>
+                        <li>Iron on the reverse side to preserve sheen</li>
+                    </ul>
+                </div>
+                <div class="care-card">
+                    <h3>Buying Tips</h3>
+                    <ul>
+                        <li>Look for Silk Mark certification for authenticity</li>
+                        <li>Check if it is handloom or powerloom</li>
+                        <li>Verify the weight (pure silk is heavier)</li>
+                        <li>Burn test: pure silk smells like burnt hair</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2 class="section-title">Get in Touch</h2>
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3>Visit Our Store</h3>
+                    <p><strong>Address:</strong> 45 Big Kanchipuram Silk Street, Kanchipuram, Tamil Nadu 631501, India</p>
+                    <p><strong>Phone:</strong> +91 44 2722 XXXX</p>
+                    <p><strong>Email:</strong> info@kanchisareecollection.com</p>
+                    <p><strong>Hours:</strong> Mon-Sat: 9:00 AM - 8:00 PM IST</p>
+                </div>
+                <form class="contact-form" id="contactForm">
+                    <h3>Send us a Message</h3>
+                    <input type="text" placeholder="Your Name" required>
+                    <input type="email" placeholder="Your Email" required>
+                    <textarea placeholder="Your Message" rows="4" required></textarea>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Kanchi Saree Collection. All rights reserved.</p>
+            <p>Handwoven with love in Kanchipuram, Tamil Nadu, India</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
