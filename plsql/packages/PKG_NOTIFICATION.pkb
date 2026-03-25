@@ -116,12 +116,16 @@ CREATE OR REPLACE PACKAGE BODY HRMS.PKG_NOTIFICATION AS
 
             EXCEPTION
                 WHEN OTHERS THEN
+                    DECLARE
+                        v_err_msg VARCHAR2(4000) := SUBSTR(SQLERRM, 1, 4000);
+                    BEGIN
                     -- Mark as failed with error message
                     UPDATE NOTIFICATION_QUEUE SET
                         STATUS = 'FAILED',
-                        ERROR_MESSAGE = SUBSTR(SQLERRM, 1, 4000),
+                        ERROR_MESSAGE = v_err_msg,
                         RETRY_COUNT = RETRY_COUNT + 1
                     WHERE NOTIFICATION_ID = notif_rec.NOTIFICATION_ID;
+                    END;
 
                     v_failed := v_failed + 1;
 

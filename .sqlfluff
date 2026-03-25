@@ -1,0 +1,11 @@
+[sqlfluff]
+dialect = oracle
+templater = raw
+max_line_length = 200
+exclude_rules = LT01, LT02, LT05, LT09, LT12, CP01, CP02, CP03, ST06, AM04, RF04, RF06, AL01, AL02, AL03, AL05, CV03
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+capitalisation_policy = upper

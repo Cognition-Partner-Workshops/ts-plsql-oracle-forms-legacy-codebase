@@ -308,15 +308,19 @@ CREATE OR REPLACE PACKAGE BODY HRMS.PKG_PAYROLL AS
                     v_error_count := v_error_count + 1;
 
                     -- Log error but continue processing other employees
+                    DECLARE
+                        v_err_msg VARCHAR2(4000) := SUBSTR(SQLERRM, 1, 4000);
+                    BEGIN
                     INSERT INTO PAYROLL_DETAILS (
                         DETAIL_ID, RUN_ID, EMP_ID, ELEMENT_ID,
                         ELEMENT_TYPE, AMOUNT, STATUS, ERROR_MESSAGE,
                         CREATED_BY, CREATED_DATE
                     ) VALUES (
                         SEQ_PAYROLL_DETAIL.NEXTVAL, p_run_id, emp_rec.EMP_ID, 0,
-                        'ERROR', 0, 'ERROR', SUBSTR(SQLERRM, 1, 4000),
+                        'ERROR', 0, 'ERROR', v_err_msg,
                         p_user, SYSDATE
                     );
+                    END;
             END;
 
             -- Commit every 50 employees to avoid long transactions
