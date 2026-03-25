@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story Books Collection - Discover Your Next Great Read</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">Story Books Collection</h1>
+                <nav class="nav">
+                    <a href="#home">Home</a>
+                    <a href="#catalog">Catalog</a>
+                    <a href="#genres">Genres</a>
+                    <a href="#reading-tips">Reading Tips</a>
+                    <a href="#contact">Contact</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-overlay"></div>
+        <div class="container hero-content">
+            <h2>Discover Amazing Story Books</h2>
+            <p>From timeless classics to modern bestsellers — find the perfect story for every reader</p>
+            <a href="#catalog" class="btn btn-primary">Browse Collection</a>
+        </div>
+    </section>
+
+    <!-- Genres Section -->
+    <section id="genres" class="genres">
+        <div class="container">
+            <h2 class="section-title">Explore by Genre</h2>
+            <div class="genres-grid">
+                <div class="genre-card">
+                    <div class="genre-icon">&#128058;</div>
+                    <h3>Children's Stories</h3>
+                    <p>Bedtime stories, fairy tales, nursery rhymes, and picture books for kids ages 2-10. Spark imagination and cultivate a love for reading from an early age.</p>
+                </div>
+                <div class="genre-card">
+                    <div class="genre-icon">&#128640;</div>
+                    <h3>Science Fiction & Fantasy</h3>
+                    <p>Epic adventures in distant galaxies, magical worlds, and alternate realities. From classic sci-fi to modern fantasy series that captivate readers of all ages.</p>
+                </div>
+                <div class="genre-card">
+                    <div class="genre-icon">&#128270;</div>
+                    <h3>Mystery & Thriller</h3>
+                    <p>Page-turning whodunits, suspenseful thrillers, and gripping detective stories. Keep guessing until the very last page with these exciting reads.</p>
+                </div>
+                <div class="genre-card">
+                    <div class="genre-icon">&#10084;&#65039;</div>
+                    <h3>Romance & Literature</h3>
+                    <p>Heartwarming love stories, literary fiction, and timeless classics. From Jane Austen to contemporary romance, stories that touch the heart.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Catalog Section -->
+    <section id="catalog" class="catalog">
+        <div class="container">
+            <h2 class="section-title">Our Book Collection</h2>
+            <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="children">Children's</button>
+                <button class="filter-btn" data-filter="fiction">Fiction</button>
+                <button class="filter-btn" data-filter="mystery">Mystery</button>
+                <button class="filter-btn" data-filter="classic">Classics</button>
+            </div>
+            <div class="product-grid" id="productGrid">
+                <!-- Products populated by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Reading Tips Section -->
+    <section id="reading-tips" class="reading-tips">
+        <div class="container">
+            <h2 class="section-title">Reading Tips & Guide</h2>
+            <div class="tips-grid">
+                <div class="tip-card">
+                    <h3>For Young Readers</h3>
+                    <ul>
+                        <li>Read aloud with your child for 20 minutes daily</li>
+                        <li>Let children choose books that interest them</li>
+                        <li>Create a cozy reading nook at home</li>
+                        <li>Visit your local library for story time events</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h3>Building a Reading Habit</h3>
+                    <ul>
+                        <li>Set a daily reading goal (even 10 pages counts!)</li>
+                        <li>Keep a book with you everywhere you go</li>
+                        <li>Join a book club for accountability and discussion</li>
+                        <li>Track your reading progress with a journal</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h3>Book Care Tips</h3>
+                    <ul>
+                        <li>Store books upright on shelves away from sunlight</li>
+                        <li>Use bookmarks instead of folding page corners</li>
+                        <li>Keep books dry and away from humidity</li>
+                        <li>Handle with clean hands to preserve pages</li>
+                    </ul>
+                </div>
+                <div class="tip-card">
+                    <h3>Buying Tips</h3>
+                    <ul>
+                        <li>Check customer reviews and ratings before buying</li>
+                        <li>Look for age-appropriate content labels for kids</li>
+                        <li>Compare prices across formats (paperback, hardcover, Kindle)</li>
+                        <li>Watch for seasonal sales and bundle deals on Amazon</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2 class="section-title">Get in Touch</h2>
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3>Visit Our Bookstore</h3>
+                    <p><strong>Address:</strong> 123 Readers Lane, Book District, New York, NY 10001, USA</p>
+                    <p><strong>Phone:</strong> +1 (212) 555-BOOK</p>
+                    <p><strong>Email:</strong> info@storybookscollection.com</p>
+                    <p><strong>Hours:</strong> Mon-Sat: 9:00 AM - 9:00 PM EST</p>
+                </div>
+                <form class="contact-form" id="contactForm">
+                    <h3>Send us a Message</h3>
+                    <input type="text" placeholder="Your Name" required>
+                    <input type="email" placeholder="Your Email" required>
+                    <textarea placeholder="Tell us what kind of books you're looking for..." rows="4" required></textarea>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Story Books Collection. All rights reserved.</p>
+            <p>Curated with love for book lovers everywhere</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
