@@ -1,0 +1,12 @@
+{
+    "base_url": "https://webcenter.example.com",
+    "username": "admin",
+    "password": "your-password-here",
+    "api_type": "portal",
+    "timeout": 30,
+    "verify_ssl": true,
+    "idcs_client_id": "",
+    "idcs_client_secret": "",
+    "default_role": "contributor",
+    "default_password": ""
+}

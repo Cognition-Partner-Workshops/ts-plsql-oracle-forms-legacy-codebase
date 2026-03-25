@@ -1,0 +1,6 @@
+user_id,first_name,last_name,email,display_name,department,role,title,manager,phone,organization,locale,timezone,password
+jsmith,John,Smith,john.smith@example.com,John Smith,Engineering,contributor,Software Engineer,mjones,+1-555-0101,Acme Corp,en-US,America/New_York,
+adoe,Alice,Doe,alice.doe@example.com,Alice Doe,Human Resources,admin,HR Manager,,+1-555-0102,Acme Corp,en-US,America/Chicago,
+bwilson,Bob,Wilson,bob.wilson@example.com,Bob Wilson,Finance,contributor,Financial Analyst,adoe,+1-555-0103,Acme Corp,en-GB,Europe/London,
+clee,Carol,Lee,carol.lee@example.com,Carol Lee,Engineering,contributor,Senior Developer,mjones,+1-555-0104,Acme Corp,en-US,America/Los_Angeles,
+mjones,Mike,Jones,mike.jones@example.com,Mike Jones,Engineering,admin,VP Engineering,,+1-555-0105,Acme Corp,en-US,America/New_York,
