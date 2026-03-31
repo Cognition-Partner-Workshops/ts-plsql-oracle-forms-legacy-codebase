@@ -21,7 +21,6 @@ import sys
 import glob
 import argparse
 import subprocess
-import shutil
 
 import oracledb
 
