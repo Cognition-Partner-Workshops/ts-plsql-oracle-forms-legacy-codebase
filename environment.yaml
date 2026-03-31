@@ -1,0 +1,167 @@
+# HRMS Oracle Forms Legacy Codebase - Environment Configuration
+# This file captures the working setup steps for the Oracle database backend.
+
+name: hrms-oracle-forms-legacy
+description: >
+  HR Management System built with Oracle Forms 12c and PL/SQL.
+  This configuration sets up the Oracle XE database backend with schema,
+  PL/SQL packages, triggers, views, and seed data.
+
+# -----------------------------------------------------------------------
+# Prerequisites
+# -----------------------------------------------------------------------
+prerequisites:
+  - name: Docker
+    version: "20.x+"
+    purpose: Run Oracle XE database container
+  - name: Python
+    version: "3.10+"
+    purpose: Run setup and validation scripts
+  - name: oracledb
+    install: pip install oracledb
+    purpose: Python Oracle database driver (thin mode, no Oracle Client needed)
+
+# -----------------------------------------------------------------------
+# Database Configuration
+# -----------------------------------------------------------------------
+database:
+  engine: Oracle XE 21c
+  docker_image: gvenzl/oracle-xe:21-slim
+  container_name: oracle-xe
+  port: 1521
+  service_name: XEPDB1
+  system_password: ${ORACLE_SYS_PWD}
+  schema:
+    user: ${HRMS_USER}
+    password: ${HRMS_PASSWORD}
+    tablespace: USERS
+
+# -----------------------------------------------------------------------
+# Setup Steps
+# -----------------------------------------------------------------------
+setup_steps:
+  - step: 1
+    name: Install Python dependencies
+    command: pip install oracledb
+
+  - step: 2
+    name: Start Oracle XE database
+    command: |
+      docker run -d --name oracle-xe \
+        -p 1521:1521 \
+        -e ORACLE_PASSWORD=${ORACLE_SYS_PWD} \
+        gvenzl/oracle-xe:21-slim
+    wait_for: >
+      Database takes 30-60 seconds to initialize on first start.
+      Wait until: docker exec oracle-xe sqlplus -s system/${ORACLE_SYS_PWD}@//localhost:1521/XEPDB1
+      returns successfully.
+
+  - step: 3
+    name: Run full database setup
+    command: python3 scripts/setup_database.py --reset
+    description: >
+      Creates the HRMS schema, runs DDL scripts (sequences, tables, views),
+      compiles PL/SQL packages and triggers via sqlplus, loads seed data,
+      and verifies the setup. The --reset flag drops and recreates the schema.
+    sub_steps:
+      - Create HRMS user with privileges (CONNECT, RESOURCE, CREATE TABLE, etc.)
+      - Grant DBMS_CRYPTO, UTL_SMTP, UTL_TCP, UTL_RAW via SYSDBA
+      - Run DDL in dependency order (sequences -> core tables -> payroll -> leave -> performance)
+      - Create views (hrms_views.sql)
+      - Compile PL/SQL package specs (11 packages, dependency order)
+      - Compile PL/SQL package bodies (11 packages, dependency order)
+      - Compile triggers (6 triggers on EMPLOYEES and AUDIT_LOG tables)
+      - Load seed data (reference data + employee data)
+      - Verify setup (object counts, row counts, no invalid objects)
+
+  - step: 4
+    name: Validate setup
+    command: python3 scripts/validate_setup.py
+    description: >
+      Runs validation tests to confirm the database is correctly configured:
+      schema object counts, no invalid PL/SQL objects, seed data loaded,
+      all packages valid, views queryable, sequences exist, triggers enabled.
+
+# -----------------------------------------------------------------------
+# Shortcut Commands (via Makefile)
+# -----------------------------------------------------------------------
+makefile_targets:
+  make deps:       Install Python dependencies
+  make db-start:   Start Oracle XE Docker container
+  make db-stop:    Stop Oracle XE Docker container
+  make db-status:  Check database connection and table count
+  make setup:      Run full database setup (starts DB if needed)
+  make reset:      Drop and recreate HRMS schema from scratch
+  make test:       Run validation tests
+  make clean:      Stop and remove Docker container
+
+# -----------------------------------------------------------------------
+# Schema Summary
+# -----------------------------------------------------------------------
+schema_summary:
+  tables: 30
+  views: 6
+  sequences: 29
+  packages: 11
+  triggers: 6
+  key_tables:
+    - EMPLOYEES (24 rows)
+    - DEPARTMENTS (10 rows)
+    - LOCATIONS (3 rows)
+    - JOB_GRADES (10 rows)
+    - JOB_TITLES (26 rows)
+    - SALARY_RECORDS (23 rows)
+    - LEAVE_TYPES (6 rows)
+    - PAY_ELEMENTS (11 rows)
+    - HOLIDAYS (10 rows)
+    - SYSTEM_PARAMETERS (10 rows)
+
+# -----------------------------------------------------------------------
+# PL/SQL Package Compilation Order
+# -----------------------------------------------------------------------
+plsql_compilation_order:
+  specifications:
+    - PKG_COMMON
+    - PKG_AUDIT
+    - PKG_VALIDATION
+    - PKG_NOTIFICATION
+    - PKG_SECURITY
+    - PKG_EMPLOYEE
+    - PKG_PAYROLL
+    - PKG_LEAVE
+    - PKG_PERFORMANCE
+    - PKG_REPORTING
+    - PKG_INTEGRATION
+  bodies: same as specifications
+  triggers:
+    - trg_audit.sql (TRG_AUDIT_INSERT, TRG_AUDIT_CLEANUP)
+    - trg_employees.sql (TRG_EMP_BEFORE_INSERT, TRG_EMP_BEFORE_UPDATE, TRG_EMP_INSTEAD_OF_DELETE)
+
+# -----------------------------------------------------------------------
+# Known Issues (Pre-existing in Legacy Codebase)
+# -----------------------------------------------------------------------
+known_issues:
+  - description: >
+      Seed data file (02_employee_data.sql) contains a commented UPDATE statement
+      for DEPARTMENTS.MANAGER_EMP_ID that fails with SQL parsing. This is benign
+      and does not affect the setup.
+  - description: >
+      Oracle Forms 12c client/compiler is required to compile .fmb files to .fmx.
+      The Forms UI layer cannot run without the Oracle Forms runtime environment.
+      This setup configures the database backend only.
+  - description: >
+      Some PL/SQL packages reference UTL_SMTP for email notifications. The grants
+      are applied but no SMTP server is configured, so email functionality will
+      not work in this environment.
+
+# -----------------------------------------------------------------------
+# Environment Variables
+# -----------------------------------------------------------------------
+environment_variables:
+  ORACLE_HOST: localhost
+  ORACLE_PORT: "1521"
+  ORACLE_SERVICE: XEPDB1
+  ORACLE_SYS_PWD: "<set a strong password for Oracle SYSTEM user>"
+  HRMS_USER: "<set the HRMS schema username>"
+  HRMS_PASSWORD: "<set the HRMS schema password>"
+  ORACLE_DOCKER_CONTAINER: oracle-xe
